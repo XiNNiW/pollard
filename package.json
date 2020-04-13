@@ -3,25 +3,15 @@
   "version": "1.0.0",
   "description": "a cross platform text editor designed for cut up poetry",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
-    "lint": "tslint -c tslint.json -p tsconfig.json",
-    "start": "npm run build && electron ./dist/main.js"
+    "build": "node build.js"
   },
   "repository": "https://github.com/xinniw/pollard",
   "keywords": [
-    "Electron",
-    "quick",
-    "start",
-    "tutorial",
-    "demo",
-    "typescript"
+    "cutup",
+    "poetry"
   ],
   "author": "GitHub",
-  "license": "CC0-1.0",
+  "license": "GPL-3.0",
   "devDependencies": {
-    "electron": "^2.0.8",
-    "tslint": "^5.10.0",
-    "typescript": "^2.8.3"
   }
 }

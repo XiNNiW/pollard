@@ -1,19 +1,171 @@
 <!DOCTYPE html>
+<html lang="en">
 <html>
   <head>
-    <meta charset="UTF-8">
-    <title>Hello World!</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pollard</title>
   </head>
   <body>
-    <h1>Hello World!</h1>
-    <!-- All of the Node.js APIs are available in this renderer process. -->
-    We are using Node.js <script>document.write(process.versions.node)</script>,
-    Chromium <script>document.write(process.versions.chrome)</script>,
-    and Electron <script>document.write(process.versions.electron)</script>
+    <script>
+'use strict'
+function Client() {
+    this.el = document.createElement('div')
+    this.el.id = 'pollard'
+    this.structure = new Structure(this)
+    this.corpus = new Corpus(this)
+    this.output = new Output(this)
+    this.menu = new Menu(this)
+    this.install = function (host = document.body) {
+        this._wrapper = document.createElement('div')
+        this._wrapper.id = 'wrapper'
+        this.structure.install(this._wrapper)
+        this.corpus.install(this._wrapper)
+        this.output.install(this._wrapper)
+        this.menu.install(this._wrapper)
+        this.el.appendChild(this._wrapper)
+        host.appendChild(this.el)
+    }
+    this.start = function() {
+        this.structure.start()
+        this.corpus.start()
+        this.output.start()
+        this.menu.start()
+    }
+}
+'use strict'
+function Corpus (client) {
+    this.el = document.createElement('div')
+    this.el.id = 'corpus'
+    this._input = document.createElement('textarea')
+    this._input.setAttribute('wrap','hard')
+    this._input.id = "corpus-input"
+    this._label = document.createElement('label')
+    this._label.setAttribute('for','corpus-input')
+    this._label.innerText = "corpus"
+    this.install = function (host) {
+        this.el.appendChild(this._input)
+        this.el.appendChild(this._label)
+        host.appendChild(this.el)
+    }
+    this.start = function(){}
+}
+'use strict'
+function Menu (client) {
+    this.el = document.createElement('ul')
+    this.el.id = 'menu'
+    this.install = function (host) {
+        host.appendChild(this.el)
+    }
+    this.start = function(){}
+}
+'use strict'
+function Output (client) {
+    this.el = document.createElement('div')
+    this.el.id = 'output'
+    this._input = document.createElement('textarea')
+    this._input.setAttribute('wrap','hard')
+    this.install = function (host) {
+        this.el.appendChild(this._input)
+        host.appendChild(this.el)
+    }
+    this.start = function(){}
+}
+'use strict'
+function Structure (client) {
+    this.el = document.createElement('div')
+    this.el.id = 'structure'
+    this._input = document.createElement('textarea')
+    this._input.id = 'structure-input'
+    this._input.setAttribute('wrap','hard')
+    this._input.value = '..-.-\n..-...-\n..---'
+    this._label = document.createElement('label')
+    this._label.setAttribute('for','structure-input')
+    this._label.innerText = "structure"
+    this.install = function (host) {
+        this.el.appendChild(this._input)
+        this.el.appendChild(this._label)
+        host.appendChild(this.el)
+    }
+    this.start = function(){}
+}
+      const client = new Client()
+      client.install(document.body)
+      window.addEventListener('load', () => { 
+        client.start()
+      })
+    </script>
+    <style>
+body {
+    background: darkgrey;
+    font-family: monospace, monospace;
+}
+#pollard { height: calc(100vh - 60px); width:calc(100vw - 60px); padding: 30px;overflow: hidden; }
+#pollard #wrapper {
+    width: 100%;
+    height: 100%;
+    overflow: hidden; position: relative; 
+}
+#pollard #wrapper #structure {
+    position: relative;
+    height: calc(100vh - 60px);
+    float: left;
+    width: 20%;
+}
+#pollard textarea { 
+    background: gainsboro;
+    font-size: xx-large;
+    width:90%;
+    height: 100%;
+    padding-left: 2em;
+    padding-right: 2em;
+    padding-top: 2em;
+    box-sizing: border-box;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    border:none;
+    resize:none;
+}
+#pollard #wrapper label {
+    color: grey;
+    position: absolute;
+    top: 0.2em;
+    bottom: 0;
+    left: 2em;
+    width: 100%;
+    transition: 0.2s;
+}
+#pollard #wrapper #output {
+    position: relative;
+    height: calc(100vh - 60px);
+    float: none;
+    overflow: hidden;
+    width: 60%;
+}
+#pollard #wrapper #output textarea {
+    width: 90%;
+    text-align: left;
+    padding-left: 15%;
+    padding-right: 15%;
+}
+#pollard #wrapper #corpus {
+    position: relative;
+    height: calc(100vh - 60px);
+    width: 100%;
+    float:right;
+    width: 20%;
+}
+#menu { position: fixed;width: 30px;background: red;top: 0;left: 0; width: 100vw; color:black; background:white; font-size:11px; line-height: 20px; transition: margin-top 0.25s; z-index: 9999; padding-left: 25px; }
+#menu.hidden { margin-top:-20px; }
+#menu.hidden > li > ul > li { display: none }
+#menu > li { float: left; position: relative; cursor: pointer; padding:0px 5px; display: inline-block; }
+#menu > li:hover { background: black; color:white; }
+#menu > li > ul { display: none; position: absolute; background:white; position: absolute; top:20px; left:0px; color:black; width: 200px}
+#menu > li:hover > ul { display: block; }
+#menu > li > ul > li { padding: 0px 10px; display: block }
+#menu > li > ul > li:hover { background: #ccc; }
+#menu > li > ul > li > i { display: inline-block; float: right; color: #aaa; }
+    </style>
   </body>
-
-  <script>
-    // You can also require other files to run in this process
-    require('./dist/renderer.js')
-  </script>
 </html>
