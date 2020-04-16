@@ -6,7 +6,6 @@ function Structure (client) {
     this._input = document.createElement('textarea')
     this._input.id = 'structure-input'
     this._input.setAttribute('wrap','hard')
-    this._input.value = '..-.-\n..-...-\n..---'
     this._label = document.createElement('label')
     this._label.setAttribute('for','structure-input')
     this._label.innerText = "structure"
@@ -17,6 +16,15 @@ function Structure (client) {
         host.appendChild(this.el)
     }
 
-    this.start = function(){}
+    this.start = function(){
+        this._input.value = this.splash
+        setTimeout(() => { this.run() }, 1000)
+    }
+
+    this.run = function (){
+        client.output.generatePoem(this._input.value)
+    }
+
+    this.splash = '..-.-\n..-...-\n..---'
 
 }
