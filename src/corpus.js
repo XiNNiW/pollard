@@ -30,7 +30,6 @@ function Corpus (client) {
     }
 
     this.onBlur = ()=>{
-        debugger;
         this.wordTokens = this.tokenizeWords(this._input.value)
         this.transitionTable = this.countTransitions(this.wordTokens)
         this.wordsBySyllable = this.countSyllablesForTokens(this.wordTokens)

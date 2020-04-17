@@ -22,31 +22,48 @@ function Output (client) {
     this.generateLineInStructure = (structureForLine, corpus=client.corpus) => {
         let wildcardGroups = structureForLine.match(/[.-]*/g)
         let words = structureForLine.match(/[^.-]*/g)
-        let generatedWords = wildcardGroups.map((group)=>this.generatePhraseInGroup(group, corpus=client.corpus))
-        let generatedWordsIterator = generatedWords[Symbol.iterator]();
         
-        let wordsInLine = words.map((word)=>{
-            if(word){
-                return word
-            } else {
-                let nextWord = generatedWordsIterator.next()
-                while(!nextWord.done & (nextWord.value == "" | nextWord.value == " ")){
+        let wordIterator = words[Symbol.iterator]();
+        let wildcardGroupIterator = wildcardGroups[Symbol.iterator]();
 
-                    nextWord = generatedWordsIterator.next()
+        let generatedLine = []
+        let nextWord = wordIterator.next()
+        let nextWildcardGroup = wildcardGroupIterator.next()
+
+        while(!nextWord.done | !nextWildcardGroup.done) {
+            
+
+            if(nextWord.value && nextWord.value.length!==0){
+
+                generatedLine.push(nextWord.value)
+
+                while(!nextWildcardGroup.done && nextWildcardGroup.value.length===0){
+                    nextWildcardGroup = wildcardGroupIterator.next()
                 }
-                return nextWord.value?nextWord.value:undefined
-            }
-        })
+                generatedLine = this.generatePhraseInGroup(nextWildcardGroup.value,corpus,generatedLine)
+                nextWord = wordIterator.next()
+                nextWildcardGroup = wildcardGroupIterator.next()
 
-        let filteredWords = wordsInLine.filter(w=>w!==undefined).filter(w=>w!==" ")
- 
-        return filteredWords.join(" ")
+            } else if (nextWildcardGroup.value && nextWildcardGroup.value.length!==0){
+
+                while(!nextWord.done && nextWord.value.length===0){
+                    nextWord = wordIterator.next()
+                }
+                generatedLine = this.generatePhraseInGroup(nextWildcardGroup.value,corpus,generatedLine)
+                nextWildcardGroup = wildcardGroupIterator.next()
+            } else {
+                break;
+            }
+
+            
+        }
+
+        return generatedLine.join(" ")
         
     }
 
     this.generatePhraseInGroup = (structure, corpus=client.corpus, wordsInGeneratedLine=[]) => {
-        // structureForLine.match(/[.-]/g)
-        let syllablesInLine = structure.length //match(/[.-]/g)
+        let syllablesInLine = structure.length
         const wordsInTable = Object.keys(corpus.transitionTable)
 
         if (syllablesInLine>0) {
@@ -82,11 +99,11 @@ function Output (client) {
                 return this.generatePhraseInGroup(remainingStructure, corpus, wordsInGeneratedLine)
             } else {
 
-                return wordsInGeneratedLine.join(" ") + structure
+                return wordsInGeneratedLine.push(structure)
             }
 
         } else {
-            return wordsInGeneratedLine.join(" ")
+            return wordsInGeneratedLine
         }
     }
 
