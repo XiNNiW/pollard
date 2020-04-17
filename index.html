@@ -60,7 +60,6 @@ function Corpus (client) {
         this.wordTokens = this.tokenizeWords(this._input.value)
         this.transitionTable = this.countTransitions(this.wordTokens)
         this.wordsBySyllable = this.countSyllablesForTokens(this.wordTokens)
-        debugger;
     }
     this.tokenizeWords = (text=this._input.value)=>{
         return text.match(/\S+/g).map((t)=>t.toLowerCase())
@@ -151,7 +150,6 @@ function Output (client) {
         let words = structureForLine.match(/[^.-]*/g)
         let wordIterator = words[Symbol.iterator]();
         let wildcardGroupIterator = wildcardGroups[Symbol.iterator]();
-        debugger;
         let generatedLine = []
         let nextWord = wordIterator.next()
         let nextWildcardGroup = wildcardGroupIterator.next()
@@ -161,18 +159,16 @@ function Output (client) {
                 while(!nextWildcardGroup.done && nextWildcardGroup.value.length===0){
                     nextWildcardGroup = wildcardGroupIterator.next()
                 }
-                generatedLine = this.generatePhraseInGroup(nextWildcardGroup.value,corpus,generatedLine)
                 nextWord = wordIterator.next()
-                nextWildcardGroup = wildcardGroupIterator.next()
             } else if (nextWildcardGroup.value && nextWildcardGroup.value.length!==0){
                 while(!nextWord.done && nextWord.value.length===0){
                     nextWord = wordIterator.next()
                 }
-                generatedLine = this.generatePhraseInGroup(nextWildcardGroup.value,corpus,generatedLine)
-                nextWildcardGroup = wildcardGroupIterator.next()
             } else {
                 break;
             }
+            generatedLine = nextWildcardGroup.value?this.generatePhraseInGroup(nextWildcardGroup.value,corpus,generatedLine):generatedLine
+            nextWildcardGroup = wildcardGroupIterator.next()
         }
         return generatedLine.join(" ")
     }

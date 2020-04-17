@@ -40,21 +40,21 @@ function Output (client) {
                 while(!nextWildcardGroup.done && nextWildcardGroup.value.length===0){
                     nextWildcardGroup = wildcardGroupIterator.next()
                 }
-                generatedLine = this.generatePhraseInGroup(nextWildcardGroup.value,corpus,generatedLine)
                 nextWord = wordIterator.next()
-                nextWildcardGroup = wildcardGroupIterator.next()
+                
 
             } else if (nextWildcardGroup.value && nextWildcardGroup.value.length!==0){
 
                 while(!nextWord.done && nextWord.value.length===0){
                     nextWord = wordIterator.next()
                 }
-                generatedLine = this.generatePhraseInGroup(nextWildcardGroup.value,corpus,generatedLine)
-                nextWildcardGroup = wildcardGroupIterator.next()
+                
             } else {
                 break;
             }
 
+            generatedLine = nextWildcardGroup.value?this.generatePhraseInGroup(nextWildcardGroup.value,corpus,generatedLine):generatedLine
+            nextWildcardGroup = wildcardGroupIterator.next()
             
         }
 
