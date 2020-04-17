@@ -32,7 +32,6 @@ function Output (client) {
 
         while(!nextWord.done | !nextWildcardGroup.done) {
             
-
             if(nextWord.value && nextWord.value.length!==0){
 
                 generatedLine.push(nextWord.value)
@@ -48,13 +47,12 @@ function Output (client) {
                 while(!nextWord.done && nextWord.value.length===0){
                     nextWord = wordIterator.next()
                 }
+                generatedLine = nextWildcardGroup.value?this.generatePhraseInGroup(nextWildcardGroup.value,corpus,generatedLine):generatedLine
+                nextWildcardGroup = wildcardGroupIterator.next()
                 
             } else {
                 break;
             }
-
-            generatedLine = nextWildcardGroup.value?this.generatePhraseInGroup(nextWildcardGroup.value,corpus,generatedLine):generatedLine
-            nextWildcardGroup = wildcardGroupIterator.next()
             
         }
 
