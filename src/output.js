@@ -65,7 +65,6 @@ function Output (client) {
     this.generatePhraseInGroup = (structure, corpus=client.corpus, wordsInGeneratedLine=[]) => {
         let syllablesInLine = structure.length
         const wordsInTable = Object.keys(corpus.transitionTable)
-
         if (syllablesInLine>0) {
             let nextWord
             let possibleNextWords
@@ -80,13 +79,15 @@ function Output (client) {
                 possibleNextWords = corpus.transitionTable[previousWord]
                 possibleNextWords = possibleNextWords?filterOutWordsThatAreTooBig(possibleNextWords, syllablesInLine, corpus.wordsBySyllable):[]
 
-            }
+            
 
-            if(possibleNextWords.length>0) {
-                nextWord = getRandomWordFromList(possibleNextWords)
+                if(possibleNextWords.length<1) {
+                    possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, corpus.wordsBySyllable)
 
-            } else {
-                possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, corpus.wordsBySyllable)
+                } else if (possibleNextWords.length===1) {
+                    possibleNextWords.push(corpus.getRandomWord())
+                } 
+
                 nextWord = getRandomWordFromList(possibleNextWords)
 
             }
@@ -96,9 +97,10 @@ function Output (client) {
                 let numberOfSyllablesInNextWord = client.corpus.countSyllablesInWord(nextWord)
                 let remainingStructure = structure.slice(numberOfSyllablesInNextWord)
 
-                return this.generatePhraseInGroup(remainingStructure, corpus, wordsInGeneratedLine)
+                const ret = this.generatePhraseInGroup(remainingStructure, corpus, wordsInGeneratedLine)
+                
+                return ret
             } else {
-
                 return wordsInGeneratedLine.push(structure)
             }
 

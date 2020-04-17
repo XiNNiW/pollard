@@ -61,8 +61,11 @@ function Corpus (client) {
         this.transitionTable = this.countTransitions(this.wordTokens)
         this.wordsBySyllable = this.countSyllablesForTokens(this.wordTokens)
     }
+    this.getRandomWord = ()=>{
+        return this.wordTokens[Math.floor(Math.random() * (this.wordTokens.length - 1))]
+    }
     this.tokenizeWords = (text=this._input.value)=>{
-        return text.match(/\S+/g).map((t)=>t.toLowerCase())
+        return text.match(/\S+/g).map((t)=>t.toLowerCase().replace(/[.,\/#!@$%\^&\*;:{}\[\]=\-\+_`~()"]/g,""))
     }
     this.countTransitions = (tokens=this.wordTokens) => {
         let transitions = {}
@@ -186,18 +189,19 @@ function Output (client) {
                 let previousWord = wordsInGeneratedLine[wordsInGeneratedLine.length-1]
                 possibleNextWords = corpus.transitionTable[previousWord]
                 possibleNextWords = possibleNextWords?filterOutWordsThatAreTooBig(possibleNextWords, syllablesInLine, corpus.wordsBySyllable):[]
-            }
-            if(possibleNextWords.length>0) {
-                nextWord = getRandomWordFromList(possibleNextWords)
-            } else {
-                possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, corpus.wordsBySyllable)
+                if(possibleNextWords.length<1) {
+                    possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, corpus.wordsBySyllable)
+                } else if (possibleNextWords.length===1) {
+                    possibleNextWords.push(corpus.getRandomWord())
+                } 
                 nextWord = getRandomWordFromList(possibleNextWords)
             }
             if(nextWord) {
                 wordsInGeneratedLine.push(nextWord)
                 let numberOfSyllablesInNextWord = client.corpus.countSyllablesInWord(nextWord)
                 let remainingStructure = structure.slice(numberOfSyllablesInNextWord)
-                return this.generatePhraseInGroup(remainingStructure, corpus, wordsInGeneratedLine)
+                const ret = this.generatePhraseInGroup(remainingStructure, corpus, wordsInGeneratedLine)
+                return ret
             } else {
                 return wordsInGeneratedLine.push(structure)
             }
@@ -249,7 +253,7 @@ function Structure (client) {
     </script>
     <style>
 body {
-    background: darkgrey;
+    background:#1F1F1F;
     font-family: monospace, monospace;
 }
 #pollard { height: calc(100vh - 60px); width:calc(100vw - 60px); padding: 30px;}
@@ -257,14 +261,19 @@ body {
     width: 100%;
     height: 100%; position: relative; 
 }
+#pollard label {
+    width: auto;
+    height: 2em;
+}
 #pollard #wrapper #structure {
     position: relative;
+    overflow: hidden;
     height: calc(100vh - 60px);
     float: left;
     width: 20%;
 }
 #pollard textarea { 
-    background: gainsboro;
+    background: rgba(220, 220, 220, 0.253);
     font-size: xx-large;
     width:90%;
     height: 100%;
@@ -277,7 +286,6 @@ body {
     margin-right: auto;
     border:none;
     resize:none;
-    overflow-y: auto
 }
 #pollard #wrapper label {
     color: grey;
@@ -300,9 +308,11 @@ body {
     text-align: left;
     padding-left: 15%;
     padding-right: 15%;
+    color: lightpink;
 }
 #pollard #wrapper #corpus {
     position: relative;
+    overflow: hidden;
     height: calc(100vh - 60px);
     width: 100%;
     float:right;

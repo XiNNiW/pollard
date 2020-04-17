@@ -35,8 +35,12 @@ function Corpus (client) {
         this.wordsBySyllable = this.countSyllablesForTokens(this.wordTokens)
     }
 
+    this.getRandomWord = ()=>{
+        return this.wordTokens[Math.floor(Math.random() * (this.wordTokens.length - 1))]
+    }
+
     this.tokenizeWords = (text=this._input.value)=>{
-        return text.match(/\S+/g).map((t)=>t.toLowerCase())
+        return text.match(/\S+/g).map((t)=>t.toLowerCase().replace(/[.,\/#!@$%\^&\*;:{}\[\]=\-\+_`~()"]/g,""))
     }
 
     this.countTransitions = (tokens=this.wordTokens) => {
