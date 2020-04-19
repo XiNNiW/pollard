@@ -65,7 +65,7 @@ function Corpus (client) {
         return this.wordTokens[Math.floor(Math.random() * (this.wordTokens.length - 1))]
     }
     this.tokenizeWords = (text=this._input.value)=>{
-        return text.match(/\S+/g).map((t)=>t.toLowerCase().replace(/[.,\/#!@$%\^&\*;:{}\[\]=\-\+_`~()"]/g,""))
+        return text.match(/\S+/g).map((t)=>t.toLowerCase().replace(/[.,\/#!@$%\^&\*;:{}\[\]=\-\+_`~()"“”]/g,""))
     }
     this.countTransitions = (tokens=this.wordTokens) => {
         let transitions = {}
@@ -89,7 +89,8 @@ function Corpus (client) {
         }
         word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
         word = word.replace(/^y/, '');
-        return word.match(/[aeiouy]{1,2}/g).length
+        const syllables = word.match(/[aeiouy]{1,2}/g)
+        return syllables?syllables.length:word.length
     }
     this.countSyllablesForTokens = (tokens) => {
         let syllableCounts = {}
@@ -125,11 +126,38 @@ function Menu (client) {
     }
     this.start = function() {
         window.addEventListener('keydown', this.onKeyDown, false)
+        window.addEventListener('touchstart', this.handleGestureStart, true);
+        window.addEventListener('touchmove', this.handleGestureMove, true);
+        window.addEventListener('touchend', this.handleGestureEnd, true);
     }
     this.onKeyDown = (e) => {
         if (event.ctrlKey && event.keyCode === 13) {
             client.output.generatePoem(client.structure._input.value)
         }
+    }
+    this.handleGestureStart = (e)=>{
+        this.touchStartEvent = e
+    }
+    this.handleGestureMove = (e)=>{
+        if(this.touchStartEvent&&this.touchStartEvent.targetTouches.length>1){
+            this.touchMoveEvent = e
+        }
+    }
+    this.handleGestureEnd = (e)=>{
+        if(this.touchStartEvent && this.touchMoveEvent && this.touchStartEvent.targetTouches && this.touchMoveEvent.targetTouches) {
+            const xi = this.touchStartEvent.targetTouches[0].clientX
+            const yi = this.touchStartEvent.targetTouches[0].clientY
+            const xf = this.touchMoveEvent.targetTouches[0].clientX
+            const yf = this.touchMoveEvent.targetTouches[0].clientY
+            const run = (xf - xi)
+            const rise = (yf - yi)
+            const slope = rise/run
+            if (run>0 && slope > -1 && slope < 1){
+                client.output.generatePoem(client.structure._input.value)
+            }
+        }
+        this.touchStartEvent = null
+        this.touchMoveEvent = null
     }
 }
 'use strict'
@@ -138,8 +166,13 @@ function Output (client) {
     this.el.id = 'output'
     this._textarea = document.createElement('textarea')
     this._textarea.setAttribute('wrap','hard')
+    this._textarea.id = "output-area"
+    this._label = document.createElement('label')
+    this._label.setAttribute('for',"output-area")
+    this._label.innerText = "output"
     this.install = function (host) {
         this.el.appendChild(this._textarea)
+        this.el.appendChild(this._label)
         host.appendChild(this.el)
     }
     this.start = function(){}
@@ -156,7 +189,6 @@ function Output (client) {
         let generatedLine = []
         let nextWord = wordIterator.next()
         let nextWildcardGroup = wildcardGroupIterator.next()
-        debugger;
         while(!nextWord.done | !nextWildcardGroup.done) {
             if(nextWord.value && nextWord.value.length!==0){
                 generatedLine.push(nextWord.value)
@@ -262,17 +294,56 @@ body {
     width: 100%;
     height: 100%; position: relative; 
 }
-#pollard label {
+@media all and (min-width: 770px) {
+    #pollard #wrapper #structure {
+        position: relative;
+        overflow: hidden;
+        height: calc(100vh - 60px);
+        float: left;
+        width: 20%;
+    }
+    #pollard #wrapper #output {
+        position: relative;
+        overflow: hidden;
+        height: calc(100vh - 60px);
+        float: none;
+        width: 60%;
+    }
+    #pollard #wrapper #corpus {
+        position: relative;
+        overflow: hidden;
+        height: calc(100vh - 60px);
+        width: 100%;
+        float:right;
+        width: 20%;
+    }
+    #pollard #wrapper #output label {
+        left:4em;
+    }
+}
+@media all and (max-width: 768px) {
+    #pollard #wrapper #structure {
+        position: relative;
+        overflow: hidden;
+        height: 30%;
+        padding-bottom: 1em;
+    }
+    #pollard #wrapper #output {
+        position: relative;
+        overflow: hidden;
+        height:50%;
+    }
+    #pollard #wrapper #corpus {
+        position: absolute;
+        overflow: hidden;
+        bottom: 0;
+        height: 15%;
+        width: 100%;
+    }
+}
+/* #pollard label {
     width: auto;
-    height: 2em;
-}
-#pollard #wrapper #structure {
-    position: relative;
-    overflow: hidden;
-    height: calc(100vh - 60px);
-    float: left;
-    width: 20%;
-}
+} */
 #pollard textarea { 
     background: rgba(220, 220, 220, 0.253);
     font-size: xx-large;
@@ -293,16 +364,10 @@ body {
     position: absolute;
     top: 0.2em;
     bottom: 0;
+    height: 2em;
     left: 2em;
     width: 100%;
     transition: 0.2s;
-}
-#pollard #wrapper #output {
-    position: relative;
-    overflow: hidden;
-    height: calc(100vh - 60px);
-    float: none;
-    width: 60%;
 }
 #pollard #wrapper #output textarea {
     width: 90%;
@@ -310,14 +375,6 @@ body {
     padding-left: 15%;
     padding-right: 15%;
     color: lightpink;
-}
-#pollard #wrapper #corpus {
-    position: relative;
-    overflow: hidden;
-    height: calc(100vh - 60px);
-    width: 100%;
-    float:right;
-    width: 20%;
 }
 #menu { position: fixed;width: 30px;background: red;top: 0;left: 0; width: 100vw; color:black; background:white; font-size:11px; line-height: 20px; transition: margin-top 0.25s; z-index: 9999; padding-left: 25px; }
 #menu.hidden { margin-top:-20px; }

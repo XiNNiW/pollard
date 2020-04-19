@@ -10,18 +10,87 @@ body {
     height: 100%; position: relative; 
 }
 
-#pollard label {
-    width: auto;
-    height: 2em;
+@media all and (min-width: 770px) {
+
+    #pollard #wrapper #structure {
+        position: relative;
+        overflow: hidden;
+        height: calc(100vh - 60px);
+        float: left;
+        width: 20%;
+    }
+
+    #pollard #wrapper #output {
+        position: relative;
+        overflow: hidden;
+        height: calc(100vh - 60px);
+        float: none;
+        width: 60%;
+        /* display: inline-block; */
+    
+    }
+
+    #pollard #wrapper #corpus {
+        position: relative;
+        overflow: hidden;
+        height: calc(100vh - 60px);
+        width: 100%;
+        float:right;
+        width: 20%;
+        /* display: inline-block; */
+
+    }
+
+    #pollard #wrapper #output label {
+        left:4em;
+    }
 }
 
-#pollard #wrapper #structure {
-    position: relative;
-    overflow: hidden;
-    height: calc(100vh - 60px);
-    float: left;
-    width: 20%;
+@media all and (max-width: 768px) {
+
+
+
+    #pollard #wrapper #structure {
+        position: relative;
+        overflow: hidden;
+        height: 30%;
+        padding-bottom: 1em;
+        /* height: calc(100vh - 60px); */
+        /* float: left; */
+        /* width: 20%; */
+    }
+
+    #pollard #wrapper #output {
+        position: relative;
+        overflow: hidden;
+        height:50%;
+        /* height: calc(100vh - 60px); */
+        /* float: none; */
+        /* width: 60%; */
+        /* display: inline-block; */
+
+    }
+
+    #pollard #wrapper #corpus {
+        position: absolute;
+        overflow: hidden;
+        bottom: 0;
+        height: 15%;
+        width: 100%;
+        /* height: calc(100vh - 60px); */
+        /* width: 100%; */
+        /* float:right; */
+        /* width: 20%; */
+        /* display: inline-block; */
+
+    }
 }
+
+
+/* #pollard label {
+    width: auto;
+    
+} */
 
 #pollard textarea { 
     background: rgba(220, 220, 220, 0.253);
@@ -45,20 +114,14 @@ body {
     position: absolute;
     top: 0.2em;
     bottom: 0;
+    height: 2em;
     left: 2em;
     width: 100%;
     transition: 0.2s;
 }
 
-#pollard #wrapper #output {
-    position: relative;
-    overflow: hidden;
-    height: calc(100vh - 60px);
-    float: none;
-    width: 60%;
-    /* display: inline-block; */
 
-}
+
 
 #pollard #wrapper #output textarea {
     width: 90%;
@@ -69,17 +132,6 @@ body {
 }
 
 
-
-#pollard #wrapper #corpus {
-    position: relative;
-    overflow: hidden;
-    height: calc(100vh - 60px);
-    width: 100%;
-    float:right;
-    width: 20%;
-    /* display: inline-block; */
-
-}
 
 
 

@@ -40,7 +40,7 @@ function Corpus (client) {
     }
 
     this.tokenizeWords = (text=this._input.value)=>{
-        return text.match(/\S+/g).map((t)=>t.toLowerCase().replace(/[.,\/#!@$%\^&\*;:{}\[\]=\-\+_`~()"]/g,""))
+        return text.match(/\S+/g).map((t)=>t.toLowerCase().replace(/[.,\/#!@$%\^&\*;:{}\[\]=\-\+_`~()"“”]/g,""))
     }
 
     this.countTransitions = (tokens=this.wordTokens) => {
@@ -61,6 +61,7 @@ function Corpus (client) {
     }
 
     this.countSyllablesInWord = (word)=>{
+        
         if (word.length <= 3) {
             return 1;
         }
@@ -69,7 +70,8 @@ function Corpus (client) {
         }
         word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
         word = word.replace(/^y/, '');
-        return word.match(/[aeiouy]{1,2}/g).length
+        const syllables = word.match(/[aeiouy]{1,2}/g)
+        return syllables?syllables.length:word.length
     }
 
     this.countSyllablesForTokens = (tokens) => {
