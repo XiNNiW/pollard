@@ -1,31 +1,17 @@
-'use strict'
+function TextGenerationModule(){
+    const TextAnalysis = new TextAnalysisModule
 
-function Output (client) {
-    this.el = document.createElement('div')
-    this.el.id = 'output'
-    this._textarea = document.createElement('textarea')
-    this._textarea.setAttribute('wrap','hard')
-    this._textarea.id = "output-area"
-
-    this._label = document.createElement('label')
-    this._label.setAttribute('for',"output-area")
-    this._label.innerText = "output"
-
-    this.install = function (host) {
-        this.el.appendChild(this._textarea)
-        this.el.appendChild(this._label)
-        host.appendChild(this.el)
+    this.getRandomWordFromList = (listOfWords)=>{
+        return listOfWords[Math.floor(Math.random() * (listOfWords.length - 1))]
     }
 
-    this.start = function(){}
-
-    this.generatePoem = (structure)=>{
+    this.generatePoemFromStructure = (structure, transitionTable, wordsBySyllable, wordTokens)=>{
         const linesInStructure = structure.split("\n")
-        const linesInPoem = linesInStructure.map((line)=>this.generateLineInStructure(line))
-        this._textarea.value = linesInPoem.join("\n")
+        const linesInPoem = linesInStructure.map((line)=>this.generateLineInStructure(line, transitionTable, wordsBySyllable, wordTokens))
+        return linesInPoem.join("\n")
     }
 
-    this.generateLineInStructure = (structureForLine, corpus=client.corpus) => {
+    this.generateLineInStructure = (structureForLine, transitionTable, wordsBySyllable, wordTokens) => {
         let wildcardGroups = structureForLine.match(/[.-]*/g)
         let words = structureForLine.match(/[^.-]*/g)
         
@@ -53,7 +39,7 @@ function Output (client) {
                 while(!nextWord.done && nextWord.value.length===0){
                     nextWord = wordIterator.next()
                 }
-                generatedLine = nextWildcardGroup.value?this.generatePhraseInGroup(nextWildcardGroup.value,corpus,generatedLine):generatedLine
+                generatedLine = nextWildcardGroup.value?this.generatePhraseInGroup(nextWildcardGroup.value,transitionTable, wordsBySyllable, wordTokens,generatedLine):generatedLine
                 nextWildcardGroup = wildcardGroupIterator.next()
                 
             } else {
@@ -66,44 +52,43 @@ function Output (client) {
         
     }
 
-    this.generatePhraseInGroup = (structure, corpus=client.corpus, wordsInGeneratedLine=[]) => {
+    this.generatePhraseInGroup = (structure, transitionTable, wordsBySyllable, wordTokens, wordsInGeneratedLine=[]) => {
         let syllablesInLine = structure.length
-        const wordsInTable = Object.keys(corpus.transitionTable)
+        const wordsInTable = Object.keys(transitionTable)
         if (syllablesInLine>0) {
             let nextWord
             let possibleNextWords
     
             if(wordsInGeneratedLine.length==0) {
                 wordsInGeneratedLine = []
-                possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, corpus.wordsBySyllable)
-                nextWord = getRandomWordFromList(possibleNextWords)
+                possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, wordsBySyllable)
+                nextWord = this.getRandomWordFromList(possibleNextWords)
 
             } else {
                 let previousWord = wordsInGeneratedLine[wordsInGeneratedLine.length-1]
-                possibleNextWords = corpus.transitionTable[previousWord]
-                possibleNextWords = possibleNextWords?filterOutWordsThatAreTooBig(possibleNextWords, syllablesInLine, corpus.wordsBySyllable):[]
+                possibleNextWords = transitionTable[previousWord]
+                possibleNextWords = possibleNextWords?filterOutWordsThatAreTooBig(possibleNextWords, syllablesInLine, wordsBySyllable):[]
 
             
 
                 if(possibleNextWords.length<1) {
-                    possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, corpus.wordsBySyllable)
+                    possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, wordsBySyllable)
 
                 } else if (possibleNextWords.length===1) {
-                    possibleNextWords.push(corpus.getRandomWord())
+                    possibleNextWords.push(this.getRandomWordFromList(wordTokens))
                 } 
 
-                nextWord = getRandomWordFromList(possibleNextWords)
+                nextWord = this.getRandomWordFromList(possibleNextWords)
 
             }
 
             if(nextWord) {
                 wordsInGeneratedLine.push(nextWord)
-                let numberOfSyllablesInNextWord = client.corpus.countSyllablesInWord(nextWord)
+                let numberOfSyllablesInNextWord = TextAnalysis.countSyllablesInWord(nextWord)
                 let remainingStructure = structure.slice(numberOfSyllablesInNextWord)
 
-                const ret = this.generatePhraseInGroup(remainingStructure, corpus, wordsInGeneratedLine)
+                return this.generatePhraseInGroup(remainingStructure, transitionTable, wordsBySyllable, wordTokens, wordsInGeneratedLine)
                 
-                return ret
             } else {
                 return wordsInGeneratedLine.push(structure)
             }
@@ -113,7 +98,7 @@ function Output (client) {
         }
     }
 
-    function filterOutWordsThatAreTooBig(listOfWords, maxSyllables, tableOfSyllablesToWord=corpus.wordsBySyllable) {
+    function filterOutWordsThatAreTooBig(listOfWords, maxSyllables, tableOfSyllablesToWord) {
         let acceptableWords = []
         for (let step=1; step<=maxSyllables; step++) {
             acceptableWords.push(tableOfSyllablesToWord[step])
@@ -123,7 +108,4 @@ function Output (client) {
         return listOfWords.map((word)=>acceptableWords.includes(word)?word:[]).flat()
     }
 
-    function getRandomWordFromList(wordsInTable) {
-        return wordsInTable[Math.floor(Math.random() * wordsInTable.length)]
-    }
 }

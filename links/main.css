@@ -12,6 +12,10 @@ body {
 
 @media all and (min-width: 770px) {
 
+    #pollard textarea {
+        font-size: xx-large;
+    }
+
     #pollard #wrapper #structure {
         position: relative;
         overflow: hidden;
@@ -44,10 +48,17 @@ body {
     #pollard #wrapper #output label {
         left:4em;
     }
+
+    #pollard #wrapper #output textarea {
+        padding-left: 15%;
+        padding-right: 15%;
+    }
 }
 
 @media all and (max-width: 768px) {
-
+    #pollard textarea {
+        font-size: large;
+    }
 
 
     #pollard #wrapper #structure {
@@ -55,19 +66,14 @@ body {
         overflow: hidden;
         height: 30%;
         padding-bottom: 1em;
-        /* height: calc(100vh - 60px); */
-        /* float: left; */
-        /* width: 20%; */
+
     }
 
     #pollard #wrapper #output {
         position: relative;
         overflow: hidden;
         height:50%;
-        /* height: calc(100vh - 60px); */
-        /* float: none; */
-        /* width: 60%; */
-        /* display: inline-block; */
+  
 
     }
 
@@ -77,11 +83,6 @@ body {
         bottom: 0;
         height: 15%;
         width: 100%;
-        /* height: calc(100vh - 60px); */
-        /* width: 100%; */
-        /* float:right; */
-        /* width: 20%; */
-        /* display: inline-block; */
 
     }
 }
@@ -94,7 +95,6 @@ body {
 
 #pollard textarea { 
     background: rgba(220, 220, 220, 0.253);
-    font-size: xx-large;
     width:90%;
     height: 100%;
     padding-left: 2em;
@@ -126,8 +126,7 @@ body {
 #pollard #wrapper #output textarea {
     width: 90%;
     text-align: left;
-    padding-left: 15%;
-    padding-right: 15%;
+
     color: lightpink;
 }
 

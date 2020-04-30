@@ -8,66 +8,11 @@
   </head>
   <body>
     <script>
-'use strict'
-function Client() {
-    this.el = document.createElement('div')
-    this.el.id = 'pollard'
-    this.structure = new Structure(this)
-    this.corpus = new Corpus(this)
-    this.output = new Output(this)
-    this.menu = new Menu(this)
-    this.install = function (host = document.body) {
-        this._wrapper = document.createElement('div')
-        this._wrapper.id = 'wrapper'
-        this.structure.install(this._wrapper)
-        this.corpus.install(this._wrapper)
-        this.output.install(this._wrapper)
-        this.menu.install(this._wrapper)
-        this.el.appendChild(this._wrapper)
-        host.appendChild(this.el)
-    }
-    this.start = function() {
-        this.structure.start()
-        this.corpus.start()
-        this.output.start()
-        this.menu.start()
-    }
-}
-'use strict'
-function Corpus (client) {
-    this.el = document.createElement('div')
-    this.el.id = 'corpus'
-    this._input = document.createElement('textarea')
-    this._input.setAttribute('wrap','hard')
-    this._input.id = "corpus-input"
-    this._label = document.createElement('label')
-    this._label.setAttribute('for','corpus-input')
-    this._label.innerText = "corpus"
-    this.wordTokens = []
-    this.transitionTable = {}
-    this.wordsBySyllable = {}
-    this.install = function (host) {
-        this.el.appendChild(this._input)
-        this.el.appendChild(this._label)
-        host.appendChild(this.el)
-        window.addEventListener('change', (e) => { this.onBlur() }, false)
-    }
-    this.start = function(){
-        this._input.value = this.splash
-        this.onBlur()
-    }
-    this.onBlur = ()=>{
-        this.wordTokens = this.tokenizeWords(this._input.value)
-        this.transitionTable = this.countTransitions(this.wordTokens)
-        this.wordsBySyllable = this.countSyllablesForTokens(this.wordTokens)
-    }
-    this.getRandomWord = ()=>{
-        return this.wordTokens[Math.floor(Math.random() * (this.wordTokens.length - 1))]
-    }
-    this.tokenizeWords = (text=this._input.value)=>{
+function TextAnalysisModule(){
+    this.tokenizeWords = (text)=>{
         return text.match(/\S+/g).map((t)=>t.toLowerCase().replace(/[.,\/#!@$%\^&\*;:{}\[\]=\-\+_`~()"“”]/g,""))
     }
-    this.countTransitions = (tokens=this.wordTokens) => {
+    this.countTransitions = (tokens) => {
         let transitions = {}
         tokens.forEach((token, index) => {
             const previousToken = tokens[index - 1]
@@ -104,6 +49,143 @@ function Corpus (client) {
             }
         })
         return syllableCounts
+    }
+}
+function TextGenerationModule(){
+    const TextAnalysis = new TextAnalysisModule
+    this.getRandomWordFromList = (listOfWords)=>{
+        return listOfWords[Math.floor(Math.random() * (listOfWords.length - 1))]
+    }
+    this.generatePoemFromStructure = (structure, transitionTable, wordsBySyllable, wordTokens)=>{
+        const linesInStructure = structure.split("\n")
+        const linesInPoem = linesInStructure.map((line)=>this.generateLineInStructure(line, transitionTable, wordsBySyllable, wordTokens))
+        return linesInPoem.join("\n")
+    }
+    this.generateLineInStructure = (structureForLine, transitionTable, wordsBySyllable, wordTokens) => {
+        let wildcardGroups = structureForLine.match(/[.-]*/g)
+        let words = structureForLine.match(/[^.-]*/g)
+        let wordIterator = words[Symbol.iterator]();
+        let wildcardGroupIterator = wildcardGroups[Symbol.iterator]();
+        let generatedLine = []
+        let nextWord = wordIterator.next()
+        let nextWildcardGroup = wildcardGroupIterator.next()
+        while(!nextWord.done | !nextWildcardGroup.done) {
+            if(nextWord.value && nextWord.value.length!==0){
+                generatedLine.push(nextWord.value)
+                while(!nextWildcardGroup.done && nextWildcardGroup.value.length===0){
+                    nextWildcardGroup = wildcardGroupIterator.next()
+                }
+                nextWord = wordIterator.next()
+            } else if (nextWildcardGroup.value && nextWildcardGroup.value.length!==0){
+                while(!nextWord.done && nextWord.value.length===0){
+                    nextWord = wordIterator.next()
+                }
+                generatedLine = nextWildcardGroup.value?this.generatePhraseInGroup(nextWildcardGroup.value,transitionTable, wordsBySyllable, wordTokens,generatedLine):generatedLine
+                nextWildcardGroup = wildcardGroupIterator.next()
+            } else {
+                break;
+            }
+        }
+        return generatedLine.join(" ")
+    }
+    this.generatePhraseInGroup = (structure, transitionTable, wordsBySyllable, wordTokens, wordsInGeneratedLine=[]) => {
+        let syllablesInLine = structure.length
+        const wordsInTable = Object.keys(transitionTable)
+        if (syllablesInLine>0) {
+            let nextWord
+            let possibleNextWords
+            if(wordsInGeneratedLine.length==0) {
+                wordsInGeneratedLine = []
+                possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, wordsBySyllable)
+                nextWord = this.getRandomWordFromList(possibleNextWords)
+            } else {
+                let previousWord = wordsInGeneratedLine[wordsInGeneratedLine.length-1]
+                possibleNextWords = transitionTable[previousWord]
+                possibleNextWords = possibleNextWords?filterOutWordsThatAreTooBig(possibleNextWords, syllablesInLine, wordsBySyllable):[]
+                if(possibleNextWords.length<1) {
+                    possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, wordsBySyllable)
+                } else if (possibleNextWords.length===1) {
+                    possibleNextWords.push(this.getRandomWordFromList(wordTokens))
+                } 
+                nextWord = this.getRandomWordFromList(possibleNextWords)
+            }
+            if(nextWord) {
+                wordsInGeneratedLine.push(nextWord)
+                let numberOfSyllablesInNextWord = TextAnalysis.countSyllablesInWord(nextWord)
+                let remainingStructure = structure.slice(numberOfSyllablesInNextWord)
+                return this.generatePhraseInGroup(remainingStructure, transitionTable, wordsBySyllable, wordTokens, wordsInGeneratedLine)
+            } else {
+                return wordsInGeneratedLine.push(structure)
+            }
+        } else {
+            return wordsInGeneratedLine
+        }
+    }
+    function filterOutWordsThatAreTooBig(listOfWords, maxSyllables, tableOfSyllablesToWord) {
+        let acceptableWords = []
+        for (let step=1; step<=maxSyllables; step++) {
+            acceptableWords.push(tableOfSyllablesToWord[step])
+        }
+        acceptableWords = acceptableWords.flat()
+        return listOfWords.map((word)=>acceptableWords.includes(word)?word:[]).flat()
+    }
+}
+'use strict'
+function Client() {
+    this.el = document.createElement('div')
+    this.el.id = 'pollard'
+    this.structure = new Structure(this)
+    this.corpus = new Corpus(this)
+    this.output = new Output(this)
+    this.menu = new Menu(this)
+    this.install = function (host = document.body) {
+        this._wrapper = document.createElement('div')
+        this._wrapper.id = 'wrapper'
+        this.structure.install(this._wrapper)
+        this.corpus.install(this._wrapper)
+        this.output.install(this._wrapper)
+        this.menu.install(this._wrapper)
+        this.el.appendChild(this._wrapper)
+        host.appendChild(this.el)
+    }
+    this.start = function() {
+        this.structure.start()
+        this.corpus.start()
+        this.output.start()
+        this.menu.start()
+    }
+}
+'use strict'
+function Corpus (client) {
+    const TextAnalysis = new TextAnalysisModule
+    this.el = document.createElement('div')
+    this.el.id = 'corpus'
+    this._input = document.createElement('textarea')
+    this._input.setAttribute('wrap','hard')
+    this._input.id = "corpus-input"
+    this._label = document.createElement('label')
+    this._label.setAttribute('for','corpus-input')
+    this._label.innerText = "corpus"
+    this.wordTokens = []
+    this.transitionTable = {}
+    this.wordsBySyllable = {}
+    this.install = function (host) {
+        this.el.appendChild(this._input)
+        this.el.appendChild(this._label)
+        host.appendChild(this.el)
+        window.addEventListener('change', (e) => { this.onBlur() }, false)
+    }
+    this.start = function(){
+        this._input.value = this.splash
+        this.onBlur()
+    }
+    this.onBlur = ()=>{
+        this.wordTokens = TextAnalysis.tokenizeWords(this._input.value)
+        this.transitionTable = TextAnalysis.countTransitions(this.wordTokens)
+        this.wordsBySyllable = TextAnalysis.countSyllablesForTokens(this.wordTokens)
+    }
+    this.getRandomWord = ()=>{
+        return TextAnalysis.getRandomWord(this.wordTokens)
     }
     this.splash = ` You will rejoice to hear that no disaster has accompanied the commencement of an enterprise which you have regarded with such evil forebodings. I arrived here yesterday, and my first task is to assure my dear sister of my welfare and increasing confidence in the success of my undertaking.
     I am already far north of London, and as I walk in the streets of Petersburgh, I feel a cold northern breeze play upon my cheeks, which braces my nerves and fills me with delight. Do you understand this feeling? This breeze, which has travelled from the regions towards which I am advancing, gives me a foretaste of those icy climes. Inspirited by this wind of promise, my daydreams become more fervent and vivid. I try in vain to be persuaded that the pole is the seat of frost and desolation; it ever presents itself to my imagination as the region of beauty and delight. There, Margaret, the sun is for ever visible, its broad disk just skirting the horizon and diffusing a perpetual splendour. There—for with your leave, my sister, I will put some trust in preceding navigators—there snow and frost are banished; and, sailing over a calm sea, we may be wafted to a land surpassing in wonders and in beauty every region hitherto discovered on the habitable globe. Its productions and features may be without example, as the phenomena of the heavenly bodies undoubtedly are in those undiscovered solitudes. What may not be expected in a country of eternal light? I may there discover the wondrous power which attracts the needle and may regulate a thousand celestial observations that require only this voyage to render their seeming eccentricities consistent for ever. I shall satiate my ardent curiosity with the sight of a part of the world never before visited, and may tread a land never before imprinted by the foot of man. These are my enticements, and they are sufficient to conquer all fear of danger or death and to induce me to commence this laborious voyage with the joy a child feels when he embarks in a little boat, with his holiday mates, on an expedition of discovery up his native river. But supposing all these conjectures to be false, you cannot contest the inestimable benefit which I shall confer on all mankind, to the last generation, by discovering a passage near the pole to those countries, to reach which at present so many months are requisite; or by ascertaining the secret of the magnet, which, if at all possible, can only be effected by an undertaking such as mine.
@@ -162,6 +244,7 @@ function Menu (client) {
 }
 'use strict'
 function Output (client) {
+    const TextGeneration = new TextGenerationModule
     this.el = document.createElement('div')
     this.el.id = 'output'
     this._textarea = document.createElement('textarea')
@@ -177,81 +260,10 @@ function Output (client) {
     }
     this.start = function(){}
     this.generatePoem = (structure)=>{
-        const linesInStructure = structure.split("\n")
-        const linesInPoem = linesInStructure.map((line)=>this.generateLineInStructure(line))
-        this._textarea.value = linesInPoem.join("\n")
-    }
-    this.generateLineInStructure = (structureForLine, corpus=client.corpus) => {
-        let wildcardGroups = structureForLine.match(/[.-]*/g)
-        let words = structureForLine.match(/[^.-]*/g)
-        let wordIterator = words[Symbol.iterator]();
-        let wildcardGroupIterator = wildcardGroups[Symbol.iterator]();
-        let generatedLine = []
-        let nextWord = wordIterator.next()
-        let nextWildcardGroup = wildcardGroupIterator.next()
-        while(!nextWord.done | !nextWildcardGroup.done) {
-            if(nextWord.value && nextWord.value.length!==0){
-                generatedLine.push(nextWord.value)
-                while(!nextWildcardGroup.done && nextWildcardGroup.value.length===0){
-                    nextWildcardGroup = wildcardGroupIterator.next()
-                }
-                nextWord = wordIterator.next()
-            } else if (nextWildcardGroup.value && nextWildcardGroup.value.length!==0){
-                while(!nextWord.done && nextWord.value.length===0){
-                    nextWord = wordIterator.next()
-                }
-                generatedLine = nextWildcardGroup.value?this.generatePhraseInGroup(nextWildcardGroup.value,corpus,generatedLine):generatedLine
-                nextWildcardGroup = wildcardGroupIterator.next()
-            } else {
-                break;
-            }
-        }
-        return generatedLine.join(" ")
-    }
-    this.generatePhraseInGroup = (structure, corpus=client.corpus, wordsInGeneratedLine=[]) => {
-        let syllablesInLine = structure.length
-        const wordsInTable = Object.keys(corpus.transitionTable)
-        if (syllablesInLine>0) {
-            let nextWord
-            let possibleNextWords
-            if(wordsInGeneratedLine.length==0) {
-                wordsInGeneratedLine = []
-                possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, corpus.wordsBySyllable)
-                nextWord = getRandomWordFromList(possibleNextWords)
-            } else {
-                let previousWord = wordsInGeneratedLine[wordsInGeneratedLine.length-1]
-                possibleNextWords = corpus.transitionTable[previousWord]
-                possibleNextWords = possibleNextWords?filterOutWordsThatAreTooBig(possibleNextWords, syllablesInLine, corpus.wordsBySyllable):[]
-                if(possibleNextWords.length<1) {
-                    possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, corpus.wordsBySyllable)
-                } else if (possibleNextWords.length===1) {
-                    possibleNextWords.push(corpus.getRandomWord())
-                } 
-                nextWord = getRandomWordFromList(possibleNextWords)
-            }
-            if(nextWord) {
-                wordsInGeneratedLine.push(nextWord)
-                let numberOfSyllablesInNextWord = client.corpus.countSyllablesInWord(nextWord)
-                let remainingStructure = structure.slice(numberOfSyllablesInNextWord)
-                const ret = this.generatePhraseInGroup(remainingStructure, corpus, wordsInGeneratedLine)
-                return ret
-            } else {
-                return wordsInGeneratedLine.push(structure)
-            }
-        } else {
-            return wordsInGeneratedLine
-        }
-    }
-    function filterOutWordsThatAreTooBig(listOfWords, maxSyllables, tableOfSyllablesToWord=corpus.wordsBySyllable) {
-        let acceptableWords = []
-        for (let step=1; step<=maxSyllables; step++) {
-            acceptableWords.push(tableOfSyllablesToWord[step])
-        }
-        acceptableWords = acceptableWords.flat()
-        return listOfWords.map((word)=>acceptableWords.includes(word)?word:[]).flat()
-    }
-    function getRandomWordFromList(wordsInTable) {
-        return wordsInTable[Math.floor(Math.random() * wordsInTable.length)]
+        let transisionTable = client.corpus.transitionTable
+        let wordsBySyllable = client.corpus.wordsBySyllable
+        let wordTokens = client.corpus.wordTokens
+        this._textarea.value = TextGeneration.generatePoemFromStructure(structure,transisionTable,wordsBySyllable,wordTokens)
     }
 }
 'use strict'
@@ -295,6 +307,9 @@ body {
     height: 100%; position: relative; 
 }
 @media all and (min-width: 770px) {
+    #pollard textarea {
+        font-size: xx-large;
+    }
     #pollard #wrapper #structure {
         position: relative;
         overflow: hidden;
@@ -320,8 +335,15 @@ body {
     #pollard #wrapper #output label {
         left:4em;
     }
+    #pollard #wrapper #output textarea {
+        padding-left: 15%;
+        padding-right: 15%;
+    }
 }
 @media all and (max-width: 768px) {
+    #pollard textarea {
+        font-size: large;
+    }
     #pollard #wrapper #structure {
         position: relative;
         overflow: hidden;
@@ -346,7 +368,6 @@ body {
 } */
 #pollard textarea { 
     background: rgba(220, 220, 220, 0.253);
-    font-size: xx-large;
     width:90%;
     height: 100%;
     padding-left: 2em;
@@ -372,8 +393,6 @@ body {
 #pollard #wrapper #output textarea {
     width: 90%;
     text-align: left;
-    padding-left: 15%;
-    padding-right: 15%;
     color: lightpink;
 }
 #menu { position: fixed;width: 30px;background: red;top: 0;left: 0; width: 100vw; color:black; background:white; font-size:11px; line-height: 20px; transition: margin-top 0.25s; z-index: 9999; padding-left: 25px; }

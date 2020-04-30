@@ -1,6 +1,8 @@
 'use strict'
 
 function Corpus (client) {
+    const TextAnalysis = new TextAnalysisModule
+
     this.el = document.createElement('div')
     this.el.id = 'corpus'
     
@@ -30,65 +32,13 @@ function Corpus (client) {
     }
 
     this.onBlur = ()=>{
-        this.wordTokens = this.tokenizeWords(this._input.value)
-        this.transitionTable = this.countTransitions(this.wordTokens)
-        this.wordsBySyllable = this.countSyllablesForTokens(this.wordTokens)
+        this.wordTokens = TextAnalysis.tokenizeWords(this._input.value)
+        this.transitionTable = TextAnalysis.countTransitions(this.wordTokens)
+        this.wordsBySyllable = TextAnalysis.countSyllablesForTokens(this.wordTokens)
     }
 
     this.getRandomWord = ()=>{
-        return this.wordTokens[Math.floor(Math.random() * (this.wordTokens.length - 1))]
-    }
-
-    this.tokenizeWords = (text=this._input.value)=>{
-        return text.match(/\S+/g).map((t)=>t.toLowerCase().replace(/[.,\/#!@$%\^&\*;:{}\[\]=\-\+_`~()"“”]/g,""))
-    }
-
-    this.countTransitions = (tokens=this.wordTokens) => {
-        let transitions = {}
-      
-        tokens.forEach((token, index) => {
-            const previousToken = tokens[index - 1]
-            if (previousToken){
-                if (!transitions[previousToken]) {
-                    transitions[previousToken] = []
-                }
-                transitions[previousToken].push(token)
-            }
-
-        });
-
-        return transitions
-    }
-
-    this.countSyllablesInWord = (word)=>{
-        
-        if (word.length <= 3) {
-            return 1;
-        }
-        if (word.length == 0) {
-            return 0;
-        }
-        word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
-        word = word.replace(/^y/, '');
-        const syllables = word.match(/[aeiouy]{1,2}/g)
-        return syllables?syllables.length:word.length
-    }
-
-    this.countSyllablesForTokens = (tokens) => {
-        let syllableCounts = {}
-        tokens.forEach((token)=>{
-            const numberOfSyllables = this.countSyllablesInWord(token)
-            if(!syllableCounts[numberOfSyllables]){
-
-                syllableCounts[numberOfSyllables] = []
-            }
-
-            if(!syllableCounts[numberOfSyllables].includes[token]){
-                syllableCounts[numberOfSyllables].push(token)
-            }
-        })
-
-        return syllableCounts
+        return TextAnalysis.getRandomWord(this.wordTokens)
     }
 
     this.splash = ` You will rejoice to hear that no disaster has accompanied the commencement of an enterprise which you have regarded with such evil forebodings. I arrived here yesterday, and my first task is to assure my dear sister of my welfare and increasing confidence in the success of my undertaking.
