@@ -1,7 +1,7 @@
 'use strict'
 
 const fs = require('fs')
-const libs = fs.readdirSync('./src/lib').filter((file) => { return file.indexOf('.js') > 0 && file !== 'build.js' })
+const libs = fs.readdirSync('./src/core').filter((file) => { return file.indexOf('.js') > 0 })
 const scripts = fs.readdirSync('./src').filter((file) => { return file.indexOf('.js') > 0 })
 const styles = fs.readdirSync('./links').filter((file) => { return file.indexOf('.css') > 0 })
 const id = process.cwd().split('/').slice(-1)[0]
@@ -31,7 +31,7 @@ fs.writeFileSync('index.html', cleanup(`
   </head>
   <body>
     <script>
-      ${libs.reduce((acc, item) => { return `${acc}// Including Library ${item}\n\n${fs.readFileSync('./src/lib/' + item, 'utf8')}\n` }, '')}
+      ${libs.reduce((acc, item) => { return `${acc}// Including Library ${item}\n\n${fs.readFileSync('./src/core/' + item, 'utf8')}\n` }, '')}
       ${scripts.reduce((acc, item) => { return `${acc}// Including Script ${item}\n\n${fs.readFileSync('./src/' + item, 'utf8')}\n` }, '')}
       const client = new Client()
       client.install(document.body)
