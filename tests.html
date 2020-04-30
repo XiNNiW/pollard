@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollard Tests</title>
+  </head>
+  <body>
+    <script>
+class UnitTest {
+    constructor(testName, pathToScriptUnderTest){
+        let fs = require('fs');
+        this.test = document.createElement('div')
+        this.testTitle = document.createElement('p')
+        this.testTitle.innerText = testName
+        this.test.appendChild(this.testTitle)
+        this.test.classList.add('unitTest')
+        document.body.appendChild(this.test)
+        this.scriptUnderTest = document.createElement('script')
+        this.scriptUnderTest.innerText = fs.readFileSync(pathToScriptUnderTest, 'utf8')
+        document.body.appendChild(this.scriptUnderTest)
+    }
+    testCase = (caseName, implementation)=>{
+        let testCaseDiv = document.createElement('div')
+        let caseTitle = document.createElement('p')
+        caseTitle.innerText = caseName
+        testCaseDiv.appendChild(caseTitle)
+        let assert = (booleanStatement,message)=>{
+            const passed = booleanStatement
+            let assertDiv = document.createElement('div')
+            assertDiv.innerText = message
+            if (passed){
+                assertDiv.classList.add('passed')
+            } else {
+                assertDiv.classList.add('failed')
+            }
+            testCaseDiv.appendChild(assertDiv)
+        }
+        implementation(assert)
+        this.test.appendChild(testCaseDiv)
+    }
+}
+let textAnalysisTest = new UnitTest('TextAnalysisTest', '../../src/core/core.text_analysis.js')
+textAnalysisTest.testCase("should work well", (assert)=>{
+    assert(true,"is my test framework working?")
+});
+    </script>
+    <style>
+        .passed { color: green;}
+        .failed {color: red;}
+    </style>
+  </body>
+</html>
