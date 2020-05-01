@@ -2,7 +2,16 @@ function TextGenerationModule(){
     const TextAnalysis = new TextAnalysisModule
 
     this.getRandomWordFromList = (listOfWords)=>{
-        return listOfWords[Math.floor(Math.random() * (listOfWords.length - 1))]
+
+        for (i=listOfWords.length-1;i>0;i--){
+            let j = Math.floor(Math.random()*i)
+            let a = listOfWords[i]
+            let b = listOfWords[j]
+            listOfWords[i]=b
+            listOfWords[j]=a
+        }
+
+        return listOfWords[0]
     }
 
     this.generatePoemFromStructure = (structure, transitionTable, wordsBySyllable, wordTokens)=>{

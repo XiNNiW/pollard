@@ -22,6 +22,33 @@ textAnalysisTest.testCase("countSyllablesInWord", (assert, TextAnalysis) => {
     assert.equal('joker is 2', TextAnalysis.countSyllablesInWord('joker'), 2)
 
     assert.equal('opera is 3', TextAnalysis.countSyllablesInWord('opera'), 3)
+    assert.equal('opener is 3', TextAnalysis.countSyllablesInWord('opener'), 3)
+    assert.equal('appleton is 3', TextAnalysis.countSyllablesInWord('appleton'), 3)
+    assert.equal('tardiness is 3', TextAnalysis.countSyllablesInWord('tardiness'), 3)
 
+    assert.equal('analysis is 4', TextAnalysis.countSyllablesInWord('analysis'), 4)
+    assert.equal('incompleted is 4', TextAnalysis.countSyllablesInWord('incompleted'), 4) 
 
 });
+
+textAnalysisTest.testCase("countTransitions", (assert, TextAnalysis)=>{
+    let tokens = ['1','2','3','4','1','2','4','3','4','2','1','1']
+    let expectedTransisionTable = {
+        '1':['2','2','1'],
+        '2':['3','4','1'],
+        '3':['4','4'],
+        '4':['1','3','2'],
+    }
+    assert.deepEqual("should create proper transition table",TextAnalysis.countTransitions(tokens),expectedTransisionTable)
+});
+
+textAnalysisTest.testCase("countSyllablesForTokens", (assert, TextAnalysis)=>{
+    let tokens = ["one", "hello", "opening", "analysis", "summary", "fledgling", "owls", "nest" ]
+    let expectedSyllableCounts = {
+        '1':['one','owls', 'nest'],
+        '2':['hello','fledgling'],
+        '3':['opening','summary'],
+        '4':['analysis'],
+    }
+    assert.deepEqual("should return dictionary of words by syllable count", TextAnalysis.countSyllablesForTokens(tokens), expectedSyllableCounts)
+})
