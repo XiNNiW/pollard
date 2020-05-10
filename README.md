@@ -9,3 +9,5 @@ change the body of text used for random generation on the right text area
 
 output appears in the middle
 
+try it [here](https://pollard-cutup-poetry.glitch.me/)
+
