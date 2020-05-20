@@ -96,20 +96,26 @@ function TextAnalysisModule(FunctionalUtilities){
 }
 function TextGenerationModule(TextAnalysis,FunctionalUtilities){
     this.getRandomWordFromList = (listOfWords,randomGenerator=Math.random)=>{
-        for (i=listOfWords.length-1;i>0;i--){
-            let j = Math.floor(randomGenerator()*i)
-            let a = listOfWords[i]
-            let b = listOfWords[j]
-            listOfWords[i]=b
-            listOfWords[j]=a
+        const shuffle = ()=> {
+            for (i=listOfWords.length-1;i>0;i--){
+                let j = Math.floor(randomGenerator()*i)
+                let a = listOfWords[i]
+                let b = listOfWords[j]
+                listOfWords[i]=b
+                listOfWords[j]=a
+            }
+        }
+        for(i=0;i<Math.floor(1+randomGenerator()*3);i++){
+            shuffle()
         }
         return listOfWords[0]
     }
-    this.generatePoemFromStructure = (structure, transitionTable, wordsBySyllable, wordTokens, randomGenerator=Math.random)=>{
-        const linesInStructure = structure.split("\n")
-        const linesInPoem = linesInStructure.map((line)=>this.generateLineInStructure(line, transitionTable, wordsBySyllable, wordTokens, randomGenerator))
-        return linesInPoem.join("\n")
-    }
+    this.generatePoemFromStructure = (structure, transitionTable, wordsBySyllable, wordTokens, randomGenerator=Math.random)=>
+        FunctionalUtilities.pipe(
+            structure=>structure.split("\n"),
+            linesInStructure=>linesInStructure.map((line)=>this.generateLineInStructure(line, transitionTable, wordsBySyllable, wordTokens, randomGenerator)),
+            linesInPoem=>linesInPoem.join("\n")
+        )(structure)
     this.generateLineInStructure = (structureForLine, transitionTable, wordsBySyllable, wordTokens,randomGenerator=Math.random) => {
         let wildcardGroups = structureForLine.match(/[.-]*/g)
         let words = structureForLine.match(/[^.-]*/g)
@@ -146,7 +152,6 @@ function TextGenerationModule(TextAnalysis,FunctionalUtilities){
             if(wordsInGeneratedLine.length==0) {
                 wordsInGeneratedLine = []
                 possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, wordsBySyllable)
-                nextWord = this.getRandomWordFromList(possibleNextWords,randomGenerator)
             } else {
                 let previousWord = wordsInGeneratedLine[wordsInGeneratedLine.length-1]
                 possibleNextWords = transitionTable[previousWord]
@@ -154,11 +159,11 @@ function TextGenerationModule(TextAnalysis,FunctionalUtilities){
                 if(possibleNextWords.length<1) {
                     possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, wordsBySyllable)
                 } 
-                else if (possibleNextWords.length===1) {
-                    possibleNextWords.push(this.getRandomWordFromList(wordTokens,randomGenerator))
-                } 
-                nextWord = this.getRandomWordFromList(possibleNextWords,randomGenerator)
             }
+            if (possibleNextWords.length===1) {
+                possibleNextWords.push(this.getRandomWordFromList(wordTokens,randomGenerator))
+            } 
+            nextWord = this.getRandomWordFromList(possibleNextWords,randomGenerator)
             if(nextWord) {
                 wordsInGeneratedLine.push(nextWord)
                 let numberOfSyllablesInNextWord = TextAnalysis.countSyllablesInWord(nextWord)
@@ -249,28 +254,24 @@ function Corpus (client) {
 }
 'use strict'
 function Menu (client) {
+    const generatePoem = () => client.output.generatePoem(client.structure._input.value)
     this.el = document.createElement('ul')
     this.el.id = 'menu'
-    this.file = document.createElement('li')
-    this.file.innerText = "file"
-    this.fileMenu = document.createElement('ul')
-    this.file.appendChild(this.fileMenu)
-    this.save = document.createElement('li')
-    this.save.innerText = 'save'
-    this.fileMenu.appendChild(this.save)
-    this.edit = document.createElement('li')
-    this.editMenu = document.createElement('ul')
-    this.edit.appendChild(this.editMenu)
+    this.pollardItem = document.createElement('li')
+    this.pollardLink = document.createElement('a')
+    this.pollardItem.appendChild(this.pollardLink)
+    this.pollardLink.innerText = "pollard"
+    this.pollardItemMenu = document.createElement('ul')
+    this.pollardItem.appendChild(this.pollardItemMenu)
     this.generate = document.createElement('li')
-    this.generate.innerText = 'generate'
-    this.edit.innerText = "edit"
+    this.generate.innerHTML = 'generate <i>control+enter</i>'
+    this.pollardItemMenu.appendChild(this.generate)
+    this.el.appendChild(this.pollardItem)
     this.install = function (host) {
-        this.el.appendChild(this.file)
-        this.el.appendChild(this.edit)
         host.appendChild(this.el)
     }
     this.start = function() {
-        this.bindEventListeners()
+        this.bindEventListeners()      
     }
     this.onKeyDown = (e) => {
         if (event.ctrlKey && event.keyCode === 13) {
@@ -295,13 +296,14 @@ function Menu (client) {
             const rise = (yf - yi)
             const slope = rise/run
             if (run>0 && slope > -1 && slope < 1){
-                client.output.generatePoem(client.structure._input.value)
+                generatePoem()
             }
         }
         this.touchStartEvent = null
         this.touchMoveEvent = null
     }
     this.bindEventListeners = ()=> {
+        this.generate.addEventListener('click',generatePoem)
         window.addEventListener('keydown', this.onKeyDown, false)
         window.addEventListener('touchstart', this.handleGestureStart, true)
         window.addEventListener('touchmove', this.handleGestureMove, true)
@@ -465,7 +467,7 @@ body {
 #menu.hidden > li > ul > li { display: none }
 #menu > li { float: left; position: relative; cursor: pointer; padding:0px 5px; display: inline-block; }
 #menu > li:hover { background: black; color:white; }
-#menu > li > ul { display: none; position: absolute; background:white; position: absolute; top:20px; left:0px; color:black; width: 200px}
+#menu > li > ul { display: none; background:white; position: absolute; top:20px; left:0px; color:black; width: 200px; padding:0}
 #menu > li:hover > ul { display: block; }
 #menu > li > ul > li { padding: 0px 10px; display: block }
 #menu > li > ul > li:hover { background: #ccc; }

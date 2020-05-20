@@ -2,24 +2,30 @@ function TextGenerationModule(TextAnalysis,FunctionalUtilities){
 
     this.getRandomWordFromList = (listOfWords,randomGenerator=Math.random)=>{
 
-        for (i=listOfWords.length-1;i>0;i--){
-            let j = Math.floor(randomGenerator()*i)
-            let a = listOfWords[i]
-            let b = listOfWords[j]
-            listOfWords[i]=b
-            listOfWords[j]=a
+        const shuffle = ()=> {
+            for (i=listOfWords.length-1;i>0;i--){
+                let j = Math.floor(randomGenerator()*i)
+                let a = listOfWords[i]
+                let b = listOfWords[j]
+                listOfWords[i]=b
+                listOfWords[j]=a
+            }
+        }
+
+        for(i=0;i<Math.floor(1+randomGenerator()*3);i++){
+            shuffle()
         }
 
         return listOfWords[0]
     }
 
-    this.generatePoemFromStructure = (structure, transitionTable, wordsBySyllable, wordTokens, randomGenerator=Math.random)=>{
-
-        const linesInStructure = structure.split("\n")
-        const linesInPoem = linesInStructure.map((line)=>this.generateLineInStructure(line, transitionTable, wordsBySyllable, wordTokens, randomGenerator))
-        return linesInPoem.join("\n")
-    }
-
+    this.generatePoemFromStructure = (structure, transitionTable, wordsBySyllable, wordTokens, randomGenerator=Math.random)=>
+        FunctionalUtilities.pipe(
+            structure=>structure.split("\n"),
+            linesInStructure=>linesInStructure.map((line)=>this.generateLineInStructure(line, transitionTable, wordsBySyllable, wordTokens, randomGenerator)),
+            linesInPoem=>linesInPoem.join("\n")
+        )(structure)
+    
     this.generateLineInStructure = (structureForLine, transitionTable, wordsBySyllable, wordTokens,randomGenerator=Math.random) => {
         let wildcardGroups = structureForLine.match(/[.-]*/g)
         let words = structureForLine.match(/[^.-]*/g)
@@ -71,7 +77,6 @@ function TextGenerationModule(TextAnalysis,FunctionalUtilities){
             if(wordsInGeneratedLine.length==0) {
                 wordsInGeneratedLine = []
                 possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, wordsBySyllable)
-                nextWord = this.getRandomWordFromList(possibleNextWords,randomGenerator)
 
             } else {
                 let previousWord = wordsInGeneratedLine[wordsInGeneratedLine.length-1]
@@ -82,13 +87,16 @@ function TextGenerationModule(TextAnalysis,FunctionalUtilities){
                     possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, wordsBySyllable)
 
                 } 
-                else if (possibleNextWords.length===1) {
-                    possibleNextWords.push(this.getRandomWordFromList(wordTokens,randomGenerator))
-                } 
 
-                nextWord = this.getRandomWordFromList(possibleNextWords,randomGenerator)
+                
 
             }
+
+            if (possibleNextWords.length===1) {
+                possibleNextWords.push(this.getRandomWordFromList(wordTokens,randomGenerator))
+            } 
+
+            nextWord = this.getRandomWordFromList(possibleNextWords,randomGenerator)
 
             if(nextWord) {
                 wordsInGeneratedLine.push(nextWord)

@@ -8,10 +8,10 @@ function UnitTest(className) {
         assert.true = (message, booleanStatement)=>{
             const passed = booleanStatement
             if (passed) {
-                console.log("PASSED", className, ': ', caseName, '--', message)
+                console.log("\x1b[32m","PASSED","\x1b[0m", className, ': ', caseName, '--', message)
             }
             else {
-                console.log("FAILED", className, ': ', caseName, '--', message)
+                console.log("\x1b[31m","FAILED","\x1b[0m", className, ': ', caseName, '--', message)
             }
             return passed
 
@@ -47,10 +47,10 @@ function UnitTest(className) {
 
     function printPassed(passed, caseName, message, expected, actual) {
         if (passed) {
-            console.log("PASSED", className, ': ', caseName, '--', message)
+            console.log("\x1b[32m","PASSED","\x1b[0m", className, ': ', caseName, '--', message)
         }
         else {
-            console.log("FAILED", className, ': ', caseName, '--', message)
+            console.log("\x1b[31m","FAILED","\x1b[0m", className, ': ', caseName, '--', message)
             console.log('---> ', 'expected: ', expected, 'actual: ', actual)
         }
     }
