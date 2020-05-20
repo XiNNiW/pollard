@@ -1,7 +1,5 @@
 'use strict'
-
 function Corpus (client) {
-    const TextAnalysis = new TextAnalysisModule
 
     this.el = document.createElement('div')
     this.el.id = 'corpus'
@@ -32,13 +30,9 @@ function Corpus (client) {
     }
 
     this.onBlur = ()=>{
-        this.wordTokens = TextAnalysis.tokenizeWords(this._input.value)
-        this.transitionTable = TextAnalysis.countTransitions(this.wordTokens)
-        this.wordsBySyllable = TextAnalysis.countSyllablesForTokens(this.wordTokens)
-    }
-
-    this.getRandomWord = ()=>{
-        return TextAnalysis.getRandomWord(this.wordTokens)
+        this.wordTokens = client.TextAnalysis.tokenizeWords(this._input.value)
+        this.transitionTable = client.TextAnalysis.countTransitions(this.wordTokens)
+        this.wordsBySyllable = client.TextAnalysis.countSyllablesForTokens(this.wordTokens)
     }
 
     this.splash = ` You will rejoice to hear that no disaster has accompanied the commencement of an enterprise which you have regarded with such evil forebodings. I arrived here yesterday, and my first task is to assure my dear sister of my welfare and increasing confidence in the success of my undertaking.

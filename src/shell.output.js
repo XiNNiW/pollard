@@ -1,8 +1,7 @@
 'use strict'
 
 function Output (client) {
-    const TextGeneration = new TextGenerationModule
-
+    
     this.el = document.createElement('div')
     this.el.id = 'output'
     this._textarea = document.createElement('textarea')
@@ -25,7 +24,7 @@ function Output (client) {
         let transisionTable = client.corpus.transitionTable
         let wordsBySyllable = client.corpus.wordsBySyllable
         let wordTokens = client.corpus.wordTokens
-        this._textarea.value = TextGeneration.generatePoemFromStructure(structure,transisionTable,wordsBySyllable,wordTokens)
+        this._textarea.value = client.TextGeneration.generatePoemFromStructure(structure,transisionTable,wordsBySyllable,wordTokens)
     }
 
 }

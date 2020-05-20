@@ -134,7 +134,7 @@ body {
 
 
 
-#menu { position: fixed;width: 30px;background: red;top: 0;left: 0; width: 100vw; color:black; background:white; font-size:11px; line-height: 20px; transition: margin-top 0.25s; z-index: 9999; padding-left: 25px; }
+#menu { position: fixed;width: 30px;background: red;top: 0;left: 0; width: 100vw; color:black; background:grey; font-size:11px; line-height: 20px; transition: margin-top 0.25s; z-index: 9999; padding-left: 25px; }
 #menu.hidden { margin-top:-20px; }
 #menu.hidden > li > ul > li { display: none }
 #menu > li { float: left; position: relative; cursor: pointer; padding:0px 5px; display: inline-block; }

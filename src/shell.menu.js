@@ -4,22 +4,37 @@ function Menu (client) {
 
     this.el = document.createElement('ul')
     this.el.id = 'menu'
+    this.file = document.createElement('li')
+    this.file.innerText = "file"
+    this.fileMenu = document.createElement('ul')
+    this.file.appendChild(this.fileMenu)
+    this.save = document.createElement('li')
+    this.save.innerText = 'save'
+    this.fileMenu.appendChild(this.save)
+    this.edit = document.createElement('li')
+    this.editMenu = document.createElement('ul')
+    this.edit.appendChild(this.editMenu)
+    this.generate = document.createElement('li')
+    this.generate.innerText = 'generate'
+    this.edit.innerText = "edit"
+
 
     this.install = function (host) {
+        this.el.appendChild(this.file)
+        
+        this.el.appendChild(this.edit)
+        
         host.appendChild(this.el)
     }
 
     this.start = function() {
-        window.addEventListener('keydown', this.onKeyDown, false)
-
-        window.addEventListener('touchstart', this.handleGestureStart, true);
-        window.addEventListener('touchmove', this.handleGestureMove, true);
-        window.addEventListener('touchend', this.handleGestureEnd, true);
-      
+        this.bindEventListeners()
+        
 
     }
 
     this.onKeyDown = (e) => {
+
         if (event.ctrlKey && event.keyCode === 13) {
             client.output.generatePoem(client.structure._input.value)
         }
@@ -56,5 +71,12 @@ function Menu (client) {
 
         this.touchStartEvent = null
         this.touchMoveEvent = null
+    }
+
+    this.bindEventListeners = ()=> {
+        window.addEventListener('keydown', this.onKeyDown, false)
+        window.addEventListener('touchstart', this.handleGestureStart, true)
+        window.addEventListener('touchmove', this.handleGestureMove, true)
+        window.addEventListener('touchend', this.handleGestureEnd, true)
     }
 }

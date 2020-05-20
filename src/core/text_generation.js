@@ -1,10 +1,9 @@
-function TextGenerationModule(){
-    const TextAnalysis = new TextAnalysisModule
+function TextGenerationModule(TextAnalysis,FunctionalUtilities){
 
-    this.getRandomWordFromList = (listOfWords)=>{
+    this.getRandomWordFromList = (listOfWords,randomGenerator=Math.random)=>{
 
         for (i=listOfWords.length-1;i>0;i--){
-            let j = Math.floor(Math.random()*i)
+            let j = Math.floor(randomGenerator()*i)
             let a = listOfWords[i]
             let b = listOfWords[j]
             listOfWords[i]=b
@@ -14,13 +13,14 @@ function TextGenerationModule(){
         return listOfWords[0]
     }
 
-    this.generatePoemFromStructure = (structure, transitionTable, wordsBySyllable, wordTokens)=>{
+    this.generatePoemFromStructure = (structure, transitionTable, wordsBySyllable, wordTokens, randomGenerator=Math.random)=>{
+
         const linesInStructure = structure.split("\n")
-        const linesInPoem = linesInStructure.map((line)=>this.generateLineInStructure(line, transitionTable, wordsBySyllable, wordTokens))
+        const linesInPoem = linesInStructure.map((line)=>this.generateLineInStructure(line, transitionTable, wordsBySyllable, wordTokens, randomGenerator))
         return linesInPoem.join("\n")
     }
 
-    this.generateLineInStructure = (structureForLine, transitionTable, wordsBySyllable, wordTokens) => {
+    this.generateLineInStructure = (structureForLine, transitionTable, wordsBySyllable, wordTokens,randomGenerator=Math.random) => {
         let wildcardGroups = structureForLine.match(/[.-]*/g)
         let words = structureForLine.match(/[^.-]*/g)
         
@@ -48,7 +48,7 @@ function TextGenerationModule(){
                 while(!nextWord.done && nextWord.value.length===0){
                     nextWord = wordIterator.next()
                 }
-                generatedLine = nextWildcardGroup.value?this.generatePhraseInGroup(nextWildcardGroup.value,transitionTable, wordsBySyllable, wordTokens,generatedLine):generatedLine
+                generatedLine = nextWildcardGroup.value?this.generatePhraseInGroup(nextWildcardGroup.value,transitionTable, wordsBySyllable, wordTokens,randomGenerator, generatedLine):generatedLine
                 nextWildcardGroup = wildcardGroupIterator.next()
                 
             } else {
@@ -61,7 +61,7 @@ function TextGenerationModule(){
         
     }
 
-    this.generatePhraseInGroup = (structure, transitionTable, wordsBySyllable, wordTokens, wordsInGeneratedLine=[]) => {
+    this.generatePhraseInGroup = (structure, transitionTable, wordsBySyllable, wordTokens, randomGenerator=Math.random, wordsInGeneratedLine=[]) => {
         let syllablesInLine = structure.length
         const wordsInTable = Object.keys(transitionTable)
         if (syllablesInLine>0) {
@@ -71,23 +71,22 @@ function TextGenerationModule(){
             if(wordsInGeneratedLine.length==0) {
                 wordsInGeneratedLine = []
                 possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, wordsBySyllable)
-                nextWord = this.getRandomWordFromList(possibleNextWords)
+                nextWord = this.getRandomWordFromList(possibleNextWords,randomGenerator)
 
             } else {
                 let previousWord = wordsInGeneratedLine[wordsInGeneratedLine.length-1]
                 possibleNextWords = transitionTable[previousWord]
                 possibleNextWords = possibleNextWords?filterOutWordsThatAreTooBig(possibleNextWords, syllablesInLine, wordsBySyllable):[]
 
-            
-
                 if(possibleNextWords.length<1) {
                     possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, wordsBySyllable)
 
-                } else if (possibleNextWords.length===1) {
-                    possibleNextWords.push(this.getRandomWordFromList(wordTokens))
+                } 
+                else if (possibleNextWords.length===1) {
+                    possibleNextWords.push(this.getRandomWordFromList(wordTokens,randomGenerator))
                 } 
 
-                nextWord = this.getRandomWordFromList(possibleNextWords)
+                nextWord = this.getRandomWordFromList(possibleNextWords,randomGenerator)
 
             }
 
@@ -96,7 +95,7 @@ function TextGenerationModule(){
                 let numberOfSyllablesInNextWord = TextAnalysis.countSyllablesInWord(nextWord)
                 let remainingStructure = structure.slice(numberOfSyllablesInNextWord)
 
-                return this.generatePhraseInGroup(remainingStructure, transitionTable, wordsBySyllable, wordTokens, wordsInGeneratedLine)
+                return this.generatePhraseInGroup(remainingStructure, transitionTable, wordsBySyllable, wordTokens, randomGenerator, wordsInGeneratedLine)
                 
             } else {
                 return wordsInGeneratedLine.push(structure)

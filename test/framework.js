@@ -1,4 +1,4 @@
-function UnitTest(className, pathToScriptUnderTest) {
+function UnitTest(className) {
 
     let fs = require('fs')
     
@@ -8,10 +8,10 @@ function UnitTest(className, pathToScriptUnderTest) {
         assert.true = (message, booleanStatement)=>{
             const passed = booleanStatement
             if (passed) {
-                console.log(className, ': ', caseName, '--', message, '--', "PASSED")
+                console.log("PASSED", className, ': ', caseName, '--', message)
             }
             else {
-                console.log(className, ': ', caseName, '--', message, '--', "FAILED")
+                console.log("FAILED", className, ': ', caseName, '--', message)
             }
             return passed
 
@@ -38,13 +38,8 @@ function UnitTest(className, pathToScriptUnderTest) {
             printPassed(passed, caseName, message, `between ${lowbound} and ${highbound}`, actual)
             return passed
         }
-
-        let instance
-        if(pathToScriptUnderTest){
-            let module = this.readJSFile(pathToScriptUnderTest)
-            instance = new module
-        }
-        implementation(assert, instance)
+       
+        implementation(assert)
     }
 
     this.readJSFile = (path) => Function('return ('+fs.readFileSync(path)+')')()
@@ -52,10 +47,10 @@ function UnitTest(className, pathToScriptUnderTest) {
 
     function printPassed(passed, caseName, message, expected, actual) {
         if (passed) {
-            console.log(className, ': ', caseName, '--', message, '--', "PASSED")
+            console.log("PASSED", className, ': ', caseName, '--', message)
         }
         else {
-            console.log(className, ': ', caseName, '--', message, '--', "FAILED")
+            console.log("FAILED", className, ': ', caseName, '--', message)
             console.log('---> ', 'expected: ', expected, 'actual: ', actual)
         }
     }

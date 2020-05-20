@@ -8,60 +8,109 @@
   </head>
   <body>
     <script>
-function TextAnalysisModule(){
-    this.tokenizeWords = (text)=>{
-        return text.match(/\S+/g).map((t)=>t.toLowerCase().replace(/[.,\/#!@$%\^&\*;:{}\[\]=\-\+_`~()"“”]/g,""))
+function FunctionalUtilities(){
+    this.pipe = (...operations)=>{
+        const _pipe = (a, b) => (arg) => b(a(arg));
+        return operations.reduce(_pipe) 
     }
-    this.countTransitions = (tokens) => {
-        let transitions = {}
-        tokens.forEach((token, index) => {
-            const previousToken = tokens[index - 1]
-            if (previousToken){
-                if (!transitions[previousToken]) {
-                    transitions[previousToken] = []
-                }
-                transitions[previousToken].push(token)
-            }
-        });
-        return transitions
-    }
-    this.countSyllablesInWord = (word)=>{
-        if (word.length <= 3) {
-            return 1;
+    this.Maybe = class Maybe{
+        constructor(value){
+            this._value = value
         }
-        if (word.length == 0) {
-            return 0;
+        static of(value){
+            return new Maybe(value)
         }
-        word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
-        word = word.replace(/^y/, '');
-        const syllables = word.match(/[aeiouy]{1,2}/g)
-        return syllables?syllables.length:word.length
-    }
-    this.countSyllablesForTokens = (tokens) => {
-        let syllableCounts = {}
-        tokens.forEach((token)=>{
-            const numberOfSyllables = this.countSyllablesInWord(token)
-            if(!syllableCounts[numberOfSyllables]){
-                syllableCounts[numberOfSyllables] = []
+        static nothing(){
+            return new Maybe(null)
+        }
+        static join(nestedMaybe){
+            return nestedMaybe.flatMap(x=>x)
+        }
+        isNothing(){
+            return this._value===null||this._value===undefined
+        }
+        map(fn){
+            return this.isNothing()?Maybe.nothing():Maybe.of(fn(this._value))
+        }
+        flatMap(fn){
+            if(this.isNothing()){
+                return Maybe.nothing()
+            } else {
+                let result = fn(this._value)
+                return result.isNothing()?Maybe.nothing():Maybe.of(result._value)
             }
-            if(!syllableCounts[numberOfSyllables].includes[token]){
-                syllableCounts[numberOfSyllables].push(token)
-            }
-        })
-        return syllableCounts
+        }
+        apply(maybeValue){
+            return this.isNothing()?Maybe.nothing():maybeValue.map(this._value)
+        }
+        getOrElse(valueIfNothing){
+            return this.isNothing()?valueIfNothing:this._value
+        }
+        toString(){
+            return `Maybe: ${this._value}`
+        }
     }
 }
-function TextGenerationModule(){
-    const TextAnalysis = new TextAnalysisModule
-    this.getRandomWordFromList = (listOfWords)=>{
-        return listOfWords[Math.floor(Math.random() * (listOfWords.length - 1))]
+function TextAnalysisModule(FunctionalUtilities){
+    this.tokenizeWords = (text)=>
+        FunctionalUtilities.pipe(
+            text => text.match(/\S+/g),
+            words => words?words.map((t)=>t.toLowerCase().replace(/[.,<>?\/#!@$%\^&\*;:{}\[\]=\-\+_`~()"“”]/g,"")):[]
+        )(text)
+    this.countTransitions = (tokens) => tokens.reduce((acc,token,index,tokens)=>{
+        const getPreviousToken = tokens=>tokens[index - 1]
+        const addToTransitionIfPresent = previousToken => 
+            acc[previousToken] 
+                ? { [previousToken]: acc[previousToken].concat([token]) } 
+                : { [previousToken]: [token] }
+        const filterOutUndefinedTransitions = transition => 
+            transition[undefined] 
+                ? { [token]: [] } 
+                : transition
+        const mergeWithPreviousTransitions = transition => { return { ...acc, ...transition } }
+        return FunctionalUtilities.pipe(
+            getPreviousToken,
+            addToTransitionIfPresent,
+            filterOutUndefinedTransitions,
+            mergeWithPreviousTransitions
+        )(tokens)
+    },{})
+    this.countSyllablesInWord = (word)=>{
+        return FunctionalUtilities.pipe(
+            word=>word.replace(/(?:[^laeiouy]es|e|[^laeiouy]e)$/, ''),
+            word=>word.replace(/^y/, ''),
+            word=>word.match(/[aeiouy]{1,2}/g),
+            syllables=>syllables?syllables.length:word.length
+        ) (word)
     }
-    this.generatePoemFromStructure = (structure, transitionTable, wordsBySyllable, wordTokens)=>{
+    this.countSyllablesForTokens = (tokens) =>
+        tokens.reduce((acc,token)=> {
+                let count = this.countSyllablesInWord(token)
+                if(acc[count]){
+                    acc[count] = acc[count].concat([token])
+                } else {
+                    acc[count] = [token]
+                }
+                return acc
+        },{})
+}
+function TextGenerationModule(TextAnalysis,FunctionalUtilities){
+    this.getRandomWordFromList = (listOfWords,randomGenerator=Math.random)=>{
+        for (i=listOfWords.length-1;i>0;i--){
+            let j = Math.floor(randomGenerator()*i)
+            let a = listOfWords[i]
+            let b = listOfWords[j]
+            listOfWords[i]=b
+            listOfWords[j]=a
+        }
+        return listOfWords[0]
+    }
+    this.generatePoemFromStructure = (structure, transitionTable, wordsBySyllable, wordTokens, randomGenerator=Math.random)=>{
         const linesInStructure = structure.split("\n")
-        const linesInPoem = linesInStructure.map((line)=>this.generateLineInStructure(line, transitionTable, wordsBySyllable, wordTokens))
+        const linesInPoem = linesInStructure.map((line)=>this.generateLineInStructure(line, transitionTable, wordsBySyllable, wordTokens, randomGenerator))
         return linesInPoem.join("\n")
     }
-    this.generateLineInStructure = (structureForLine, transitionTable, wordsBySyllable, wordTokens) => {
+    this.generateLineInStructure = (structureForLine, transitionTable, wordsBySyllable, wordTokens,randomGenerator=Math.random) => {
         let wildcardGroups = structureForLine.match(/[.-]*/g)
         let words = structureForLine.match(/[^.-]*/g)
         let wordIterator = words[Symbol.iterator]();
@@ -80,7 +129,7 @@ function TextGenerationModule(){
                 while(!nextWord.done && nextWord.value.length===0){
                     nextWord = wordIterator.next()
                 }
-                generatedLine = nextWildcardGroup.value?this.generatePhraseInGroup(nextWildcardGroup.value,transitionTable, wordsBySyllable, wordTokens,generatedLine):generatedLine
+                generatedLine = nextWildcardGroup.value?this.generatePhraseInGroup(nextWildcardGroup.value,transitionTable, wordsBySyllable, wordTokens,randomGenerator, generatedLine):generatedLine
                 nextWildcardGroup = wildcardGroupIterator.next()
             } else {
                 break;
@@ -88,7 +137,7 @@ function TextGenerationModule(){
         }
         return generatedLine.join(" ")
     }
-    this.generatePhraseInGroup = (structure, transitionTable, wordsBySyllable, wordTokens, wordsInGeneratedLine=[]) => {
+    this.generatePhraseInGroup = (structure, transitionTable, wordsBySyllable, wordTokens, randomGenerator=Math.random, wordsInGeneratedLine=[]) => {
         let syllablesInLine = structure.length
         const wordsInTable = Object.keys(transitionTable)
         if (syllablesInLine>0) {
@@ -97,23 +146,24 @@ function TextGenerationModule(){
             if(wordsInGeneratedLine.length==0) {
                 wordsInGeneratedLine = []
                 possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, wordsBySyllable)
-                nextWord = this.getRandomWordFromList(possibleNextWords)
+                nextWord = this.getRandomWordFromList(possibleNextWords,randomGenerator)
             } else {
                 let previousWord = wordsInGeneratedLine[wordsInGeneratedLine.length-1]
                 possibleNextWords = transitionTable[previousWord]
                 possibleNextWords = possibleNextWords?filterOutWordsThatAreTooBig(possibleNextWords, syllablesInLine, wordsBySyllable):[]
                 if(possibleNextWords.length<1) {
                     possibleNextWords = filterOutWordsThatAreTooBig(wordsInTable, syllablesInLine, wordsBySyllable)
-                } else if (possibleNextWords.length===1) {
-                    possibleNextWords.push(this.getRandomWordFromList(wordTokens))
                 } 
-                nextWord = this.getRandomWordFromList(possibleNextWords)
+                else if (possibleNextWords.length===1) {
+                    possibleNextWords.push(this.getRandomWordFromList(wordTokens,randomGenerator))
+                } 
+                nextWord = this.getRandomWordFromList(possibleNextWords,randomGenerator)
             }
             if(nextWord) {
                 wordsInGeneratedLine.push(nextWord)
                 let numberOfSyllablesInNextWord = TextAnalysis.countSyllablesInWord(nextWord)
                 let remainingStructure = structure.slice(numberOfSyllablesInNextWord)
-                return this.generatePhraseInGroup(remainingStructure, transitionTable, wordsBySyllable, wordTokens, wordsInGeneratedLine)
+                return this.generatePhraseInGroup(remainingStructure, transitionTable, wordsBySyllable, wordTokens, randomGenerator, wordsInGeneratedLine)
             } else {
                 return wordsInGeneratedLine.push(structure)
             }
@@ -134,6 +184,8 @@ function TextGenerationModule(){
 function Client() {
     this.el = document.createElement('div')
     this.el.id = 'pollard'
+    this.TextAnalysis = new TextAnalysisModule(new FunctionalUtilities)
+    this.TextGeneration = new TextGenerationModule(this.TextAnalysis,new FunctionalUtilities)
     this.structure = new Structure(this)
     this.corpus = new Corpus(this)
     this.output = new Output(this)
@@ -157,7 +209,6 @@ function Client() {
 }
 'use strict'
 function Corpus (client) {
-    const TextAnalysis = new TextAnalysisModule
     this.el = document.createElement('div')
     this.el.id = 'corpus'
     this._input = document.createElement('textarea')
@@ -180,12 +231,9 @@ function Corpus (client) {
         this.onBlur()
     }
     this.onBlur = ()=>{
-        this.wordTokens = TextAnalysis.tokenizeWords(this._input.value)
-        this.transitionTable = TextAnalysis.countTransitions(this.wordTokens)
-        this.wordsBySyllable = TextAnalysis.countSyllablesForTokens(this.wordTokens)
-    }
-    this.getRandomWord = ()=>{
-        return TextAnalysis.getRandomWord(this.wordTokens)
+        this.wordTokens = client.TextAnalysis.tokenizeWords(this._input.value)
+        this.transitionTable = client.TextAnalysis.countTransitions(this.wordTokens)
+        this.wordsBySyllable = client.TextAnalysis.countSyllablesForTokens(this.wordTokens)
     }
     this.splash = ` You will rejoice to hear that no disaster has accompanied the commencement of an enterprise which you have regarded with such evil forebodings. I arrived here yesterday, and my first task is to assure my dear sister of my welfare and increasing confidence in the success of my undertaking.
     I am already far north of London, and as I walk in the streets of Petersburgh, I feel a cold northern breeze play upon my cheeks, which braces my nerves and fills me with delight. Do you understand this feeling? This breeze, which has travelled from the regions towards which I am advancing, gives me a foretaste of those icy climes. Inspirited by this wind of promise, my daydreams become more fervent and vivid. I try in vain to be persuaded that the pole is the seat of frost and desolation; it ever presents itself to my imagination as the region of beauty and delight. There, Margaret, the sun is for ever visible, its broad disk just skirting the horizon and diffusing a perpetual splendour. There—for with your leave, my sister, I will put some trust in preceding navigators—there snow and frost are banished; and, sailing over a calm sea, we may be wafted to a land surpassing in wonders and in beauty every region hitherto discovered on the habitable globe. Its productions and features may be without example, as the phenomena of the heavenly bodies undoubtedly are in those undiscovered solitudes. What may not be expected in a country of eternal light? I may there discover the wondrous power which attracts the needle and may regulate a thousand celestial observations that require only this voyage to render their seeming eccentricities consistent for ever. I shall satiate my ardent curiosity with the sight of a part of the world never before visited, and may tread a land never before imprinted by the foot of man. These are my enticements, and they are sufficient to conquer all fear of danger or death and to induce me to commence this laborious voyage with the joy a child feels when he embarks in a little boat, with his holiday mates, on an expedition of discovery up his native river. But supposing all these conjectures to be false, you cannot contest the inestimable benefit which I shall confer on all mankind, to the last generation, by discovering a passage near the pole to those countries, to reach which at present so many months are requisite; or by ascertaining the secret of the magnet, which, if at all possible, can only be effected by an undertaking such as mine.
@@ -203,14 +251,26 @@ function Corpus (client) {
 function Menu (client) {
     this.el = document.createElement('ul')
     this.el.id = 'menu'
+    this.file = document.createElement('li')
+    this.file.innerText = "file"
+    this.fileMenu = document.createElement('ul')
+    this.file.appendChild(this.fileMenu)
+    this.save = document.createElement('li')
+    this.save.innerText = 'save'
+    this.fileMenu.appendChild(this.save)
+    this.edit = document.createElement('li')
+    this.editMenu = document.createElement('ul')
+    this.edit.appendChild(this.editMenu)
+    this.generate = document.createElement('li')
+    this.generate.innerText = 'generate'
+    this.edit.innerText = "edit"
     this.install = function (host) {
+        this.el.appendChild(this.file)
+        this.el.appendChild(this.edit)
         host.appendChild(this.el)
     }
     this.start = function() {
-        window.addEventListener('keydown', this.onKeyDown, false)
-        window.addEventListener('touchstart', this.handleGestureStart, true);
-        window.addEventListener('touchmove', this.handleGestureMove, true);
-        window.addEventListener('touchend', this.handleGestureEnd, true);
+        this.bindEventListeners()
     }
     this.onKeyDown = (e) => {
         if (event.ctrlKey && event.keyCode === 13) {
@@ -241,10 +301,15 @@ function Menu (client) {
         this.touchStartEvent = null
         this.touchMoveEvent = null
     }
+    this.bindEventListeners = ()=> {
+        window.addEventListener('keydown', this.onKeyDown, false)
+        window.addEventListener('touchstart', this.handleGestureStart, true)
+        window.addEventListener('touchmove', this.handleGestureMove, true)
+        window.addEventListener('touchend', this.handleGestureEnd, true)
+    }
 }
 'use strict'
 function Output (client) {
-    const TextGeneration = new TextGenerationModule
     this.el = document.createElement('div')
     this.el.id = 'output'
     this._textarea = document.createElement('textarea')
@@ -263,7 +328,7 @@ function Output (client) {
         let transisionTable = client.corpus.transitionTable
         let wordsBySyllable = client.corpus.wordsBySyllable
         let wordTokens = client.corpus.wordTokens
-        this._textarea.value = TextGeneration.generatePoemFromStructure(structure,transisionTable,wordsBySyllable,wordTokens)
+        this._textarea.value = client.TextGeneration.generatePoemFromStructure(structure,transisionTable,wordsBySyllable,wordTokens)
     }
 }
 'use strict'
@@ -395,7 +460,7 @@ body {
     text-align: left;
     color: lightpink;
 }
-#menu { position: fixed;width: 30px;background: red;top: 0;left: 0; width: 100vw; color:black; background:white; font-size:11px; line-height: 20px; transition: margin-top 0.25s; z-index: 9999; padding-left: 25px; }
+#menu { position: fixed;width: 30px;background: red;top: 0;left: 0; width: 100vw; color:black; background:grey; font-size:11px; line-height: 20px; transition: margin-top 0.25s; z-index: 9999; padding-left: 25px; }
 #menu.hidden { margin-top:-20px; }
 #menu.hidden > li > ul > li { display: none }
 #menu > li { float: left; position: relative; cursor: pointer; padding:0px 5px; display: inline-block; }

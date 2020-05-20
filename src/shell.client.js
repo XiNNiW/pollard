@@ -5,6 +5,9 @@ function Client() {
     this.el = document.createElement('div')
     this.el.id = 'pollard'
 
+    this.TextAnalysis = new TextAnalysisModule(new FunctionalUtilities)
+    this.TextGeneration = new TextGenerationModule(this.TextAnalysis,new FunctionalUtilities)
+
     this.structure = new Structure(this)
     this.corpus = new Corpus(this)
     this.output = new Output(this)
