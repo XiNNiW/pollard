@@ -88,15 +88,13 @@ function TextGenerationModule(TextAnalysis,FunctionalUtilities){
 
                 } 
 
-                
-
             }
 
             if (possibleNextWords.length===1) {
                 possibleNextWords.push(this.getRandomWordFromList(wordTokens,randomGenerator))
             } 
 
-            nextWord = this.getRandomWordFromList(possibleNextWords,randomGenerator)
+            nextWord = this.getRandomWordFromList(filterOutWordsThatAreTooBig(possibleNextWords,syllablesInLine, wordsBySyllable),randomGenerator)
 
             if(nextWord) {
                 wordsInGeneratedLine.push(nextWord)

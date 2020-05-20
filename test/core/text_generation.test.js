@@ -38,7 +38,7 @@ textGenerationTest.testCase("get random word from 2 element list", (assert) => {
         'one':0,
         'two':0,
     }
-    const iterations = 20000;
+    const iterations = 100000;
     for(let i=0;i<iterations;i++){
         let randomWord = TextGeneration.getRandomWordFromList(tokens,randomGenerator)
         resultCounts[randomWord]++
